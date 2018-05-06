@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.SeekBar;
 
@@ -37,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
 //                Log.e("pY", view.getPivotY() + "");
 //                LogUtil.print(progress);
 //                view.setRotation(progress);
-                    mFanLayout.setRadius(progress);
+                mFanLayout.setRadius(progress);
             }
 
             @Override
@@ -54,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 //                view.setPivotX(progress - 250);
-                    mFanLayout.setItemOffset(progress - 250);
+                mFanLayout.setItemOffset(progress - seekBar.getMax()/2);
             }
 
             @Override
@@ -71,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 //                view.setPivotY(progress - 250);
-                    mFanLayout.setCenterOffset(progress - 250);
+                mFanLayout.setCenterOffset(progress - seekBar.getMax()/2);
             }
 
             @Override
@@ -113,7 +114,8 @@ public class MainActivity extends AppCompatActivity {
 
     private View getView() {
         Button button = new Button(this);
-        button.setText("123456789123456789123123");
+        button.setLayoutParams(new ViewGroup.LayoutParams(300, ViewGroup.LayoutParams.WRAP_CONTENT));
+        button.setText(String.valueOf(mFanLayout.getChildCount()));
         return button;
     }
 }

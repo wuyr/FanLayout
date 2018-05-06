@@ -1,5 +1,6 @@
 package com.wuyr.fanlayout;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -39,6 +40,7 @@ public class FanLayout extends ViewGroup {
     private VelocityTracker mVelocityTracker;//手指滑动速率搜集
     private boolean isClockwiseScrolling;
     private boolean isShouldBeGetY;
+    private OnItemSelectedListener mOnItemSelectedListener;
 
     public FanLayout(Context context) {
         this(context, null);
@@ -134,20 +136,81 @@ public class FanLayout extends ViewGroup {
     }
 
     private float mLastScrollOffset;
+    private boolean isFixingPosition;
 
     @Override
     public void computeScroll() {
         if (mScroller.computeScrollOffset()) {
-            float y = ((isShouldBeGetY ? mScroller.getCurrY() : mScroller.getCurrX()) * .2F);
+//            if (isFixingPosition) {
+//                rotation(mScroller.getCurrY());
+//            } else {
+            float y = ((isShouldBeGetY ? mScroller.getCurrY() : mScroller.getCurrX()) * .3F);
             if (mLastScrollOffset != 0) {
                 float offset = Math.abs(y - mLastScrollOffset);
                 rotation(isClockwiseScrolling ? offset : -offset);
             }
             mLastScrollOffset = y;
+//            }
             invalidate();
         } else if (mScroller.isFinished()) {
             mLastScrollOffset = 0;
+            int childCount = getChildCount();
+            if (childCount == 0) {
+                return;
+            }
+            int targetAngle;
+            switch (mCurrentGravity) {
+                case GRAVITY_RIGHT:
+                    targetAngle = 180;
+                    break;
+                case GRAVITY_TOP:
+                    targetAngle = 90;
+                    break;
+                case GRAVITY_BOTTOM:
+                    targetAngle = 270;
+                    break;
+                case GRAVITY_LEFT:
+                default:
+                    targetAngle = 0;
+                    break;
+            }
+            int hitPos = findClosestViewPos(targetAngle);
+            float rotation = getChildAt(hitPos).getRotation();
+            if (Math.abs(rotation - targetAngle) > 180) {
+                targetAngle = 360 - targetAngle;
+            }
+            ValueAnimator animator = ValueAnimator.ofFloat(rotation, fixRotation(targetAngle)).setDuration(350);
+            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    rotationAbsolute((float) animation.getAnimatedValue());
+                }
+            });
+            animator.start();
         }
+    }
+
+    private int findClosestViewPos(float targetAngle) {
+        int childCount = getChildCount();
+        float temp = getChildAt(0).getRotation();
+        if (targetAngle == 0 && temp > 180) {
+            temp = 360 - temp;
+        }
+        float hitRotation = Math.abs(targetAngle - temp);
+        int hitPos = 0;
+
+        for (int i = 1; i < childCount; i++) {
+            temp = getChildAt(i).getRotation();
+            if (targetAngle == 0 && temp > 180) {
+                temp = 360 - temp;
+            }
+            float rotation = Math.abs(targetAngle - temp);
+            if (rotation < hitRotation) {
+                hitPos = i;
+                hitRotation = rotation;
+            }
+        }
+        return hitPos;
     }
 
     /**
@@ -158,6 +221,7 @@ public class FanLayout extends ViewGroup {
      * @return 是否顺时针
      */
     private boolean isClockwise(float x, float y) {
+//        return Math.abs(y - mStartY) > Math.abs(x - mStartX) ? x < mPivotX != y > mStartY : y < mPivotY == x > mStartX;
         boolean isClockwise;
         //手势向下
         boolean isGestureDownward = y > mStartY;
@@ -179,8 +243,31 @@ public class FanLayout extends ViewGroup {
     private void rotation(float rotation) {
         for (int i = 0; i < getChildCount(); i++) {
             View view = getChildAt(i);
-            view.setRotation(view.getRotation() + rotation);
+            view.setRotation(fixRotation(view.getRotation() + rotation));
+//            LogUtil.print(view.getRotation());
         }
+    }
+
+    private void rotationAbsolute(float rotation) {
+        int childCount = getChildCount();
+        float angle = 360F / childCount;
+        for (int i = 0; i < childCount; i++) {
+            getChildAt(i).setRotation(fixRotation(rotation + i * angle));
+        }
+    }
+
+    private float fixRotation(float rotation) {
+        //周角
+        float angle = 360F;
+        if (rotation < 0) {
+            //将负的角度变成正的, 比如：-1 --> 359，在视觉上是一样的，这样我们内部处理起来会比较轻松
+            rotation += angle;
+        }
+        //避免大于360度，即：362 --> 2
+        if (rotation > angle) {
+            rotation = rotation % angle;
+        }
+        return rotation;
     }
 
     @Override
@@ -214,7 +301,6 @@ public class FanLayout extends ViewGroup {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        LogUtil.print("==");
         measureChildren(widthMeasureSpec, heightMeasureSpec);
         int specSize = MeasureSpec.getSize(widthMeasureSpec);
         int specMode = MeasureSpec.getMode(widthMeasureSpec);
@@ -234,14 +320,12 @@ public class FanLayout extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        LogUtil.print("==");
         int baseLeft = mPivotX + mRadius + mItemOffset;
         int childCount = getChildCount();
         float angle = 360F / childCount;
         for (int i = 0; i < childCount; i++) {
             View view = getChildAt(i);
             int height = view.getMeasuredHeight() / 2;
-            LogUtil.printf("%s*%s",view.getMeasuredWidth(),view.getMeasuredHeight());
             //更新旋转的中心点
             view.setPivotX(-mRadius - mItemOffset);
             view.setPivotY(height);
@@ -256,6 +340,7 @@ public class FanLayout extends ViewGroup {
 //        mPaint.setColor(Color.BLUE);
 //        mPaint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(mPivotX, mPivotY, mRadius, mPaint);
+        canvas.drawLine(mPivotX, mPivotY, getWidth(), mPivotY, mPaint);
 //        canvas.drawPoint(mPivotX, mPivotY, mPaint);
 
 //        mPaint.setColor(Color.DKGRAY);
@@ -278,26 +363,48 @@ public class FanLayout extends ViewGroup {
     }
 
     public void setRadius(int radius) {
-        mRadius = radius;
-        requestLayout();
+        if (mRadius != radius) {
+            mRadius = radius;
+            requestLayout();
+        }
     }
 
     public void setCenterOffset(int centerOffset) {
-        mCenterOffset = centerOffset;
-        requestLayout();
+        if (mCenterOffset != centerOffset) {
+            mCenterOffset = centerOffset;
+            requestLayout();
+        }
     }
 
     public void setItemOffset(int itemOffset) {
-        mItemOffset = itemOffset;
-        requestLayout();
+        if (mItemOffset != itemOffset) {
+            mItemOffset = itemOffset;
+            requestLayout();
+        }
     }
 
     public void setGravity(@Gravity int gravity) {
-        mCurrentGravity = gravity;
-        requestLayout();
+        if (mCurrentGravity != gravity) {
+            mCurrentGravity = gravity;
+            requestLayout();
+        }
+    }
+
+    public int getGravity() {
+        return mCurrentGravity;
+    }
+
+    public void setOnItemSelectedListener(OnItemSelectedListener listener) {
+        mOnItemSelectedListener = listener;
+    }
+
+    public interface OnItemSelectedListener {
+        void onSelected(View item);
     }
 
     public static void main(String[] args) {
-        System.out.print(Math.toDegrees(Math.acos(0.2D)));
+        System.out.println(Math.sin(310));
+        System.out.println(Math.sin(50));
+        System.out.println(186 % 90);
     }
 }

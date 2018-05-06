@@ -41,24 +41,24 @@
 
     <com.wuyr.fanlayout.FanLayout xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/fan_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:center_gravity="left"
         app:item_offset="0dp"
         app:center_offset="0dp"
         app:color="#9F55">
 
-        <ImageView
-            android:layout_width="wrap_content"
-            android:adjustViewBounds="true"
-            android:src="@mipmap/ic_launcher"
-            android:layout_height="50dp" />
+        <!--<ImageView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:adjustViewBounds="true"-->
+            <!--android:src="@mipmap/ic_launcher"-->
+            <!--android:layout_height="50dp" />-->
 
-        <ImageView
-            android:layout_width="wrap_content"
-            android:adjustViewBounds="true"
-            android:src="@mipmap/ic_launcher"
-            android:layout_height="50dp" />
+        <!--<ImageView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:adjustViewBounds="true"-->
+            <!--android:src="@mipmap/ic_launcher"-->
+            <!--android:layout_height="50dp" />-->
 
     </com.wuyr.fanlayout.FanLayout>
 
@@ -124,7 +124,7 @@
             android:id="@+id/radius"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:max="200"
+            android:max="400"
             android:padding="8dp"
             android:progress="0" />
 
@@ -133,16 +133,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:indeterminateDrawable="@color/colorPrimaryDark"
-            android:max="500"
+            android:max="1000"
             android:padding="8dp"
-            android:progress="250" />
+            android:progress="500" />
 
         <SeekBar
             android:id="@+id/item_offset"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:max="500"
+            android:max="1000"
             android:padding="8dp"
-            android:progress="250" />
+            android:progress="500" />
     </LinearLayout>
 </FrameLayout>
