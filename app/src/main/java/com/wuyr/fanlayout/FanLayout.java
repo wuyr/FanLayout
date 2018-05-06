@@ -1,5 +1,7 @@
 package com.wuyr.fanlayout;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -174,16 +176,32 @@ public class FanLayout extends ViewGroup {
                     targetAngle = 0;
                     break;
             }
-            int hitPos = findClosestViewPos(targetAngle);
+            final int hitPos = findClosestViewPos(targetAngle);
             float rotation = getChildAt(hitPos).getRotation();
             if (Math.abs(rotation - targetAngle) > 180) {
                 targetAngle = 360 - targetAngle;
             }
-            ValueAnimator animator = ValueAnimator.ofFloat(rotation, fixRotation(targetAngle)).setDuration(350);
+            float angle = Math.abs(rotation - fixRotation(targetAngle));
+            ValueAnimator animator = ValueAnimator.ofFloat(0, rotation > fixRotation(targetAngle) ? -angle : angle).setDuration(500);
             animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
-                    rotationAbsolute((float) animation.getAnimatedValue());
+                    float currentValue = (float) animation.getAnimatedValue();
+                    if (mLastScrollOffset != 0) {
+                        float offset = currentValue - mLastScrollOffset;
+                        LogUtil.print(offset);
+                        rotation(offset);
+                    }
+                    mLastScrollOffset = currentValue;
+                }
+            });
+            animator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mLastScrollOffset = 0;
+                    if (mOnItemSelectedListener != null) {
+                        mOnItemSelectedListener.onSelected(getChildAt(hitPos));
+                    }
                 }
             });
             animator.start();
