@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="FanLayout">
+        <attr name="radius" format="dimension" />
+        <attr name="color" format="color" />
+        <attr name="center_gravity" format="enum">
+            <enum name="left" value="0" />
+            <enum name="right" value="1" />
+            <enum name="top" value="2" />
+            <enum name="bottom" value="3" />
+        </attr>
+        <attr name="center_offset" format="dimension" />
+        <attr name="item_offset" format="dimension" />
+    </declare-styleable>
+</resources>
