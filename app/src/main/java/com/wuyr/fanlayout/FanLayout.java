@@ -45,6 +45,7 @@ public class FanLayout extends ViewGroup {
     }
 
     public static final int TYPE_COLOR = 0, TYPE_VIEW = 1;
+    private int mFixingAnimationDuration = 300;
     private int mRadius;
     private int mBearingOffset;
     private int mItemOffset;
@@ -245,7 +246,7 @@ public class FanLayout extends ViewGroup {
             targetAngle = 360 - targetAngle;
         }
         float angle = Math.abs(rotation - fixRotation(targetAngle));
-        mAnimator = ValueAnimator.ofFloat(0, rotation > fixRotation(targetAngle) ? -angle : angle).setDuration(250);
+        mAnimator = ValueAnimator.ofFloat(0, rotation > fixRotation(targetAngle) ? -angle : angle).setDuration(mFixingAnimationDuration);
         mAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
@@ -277,7 +278,6 @@ public class FanLayout extends ViewGroup {
         int childCount = getChildCount();
         int startIndex = isViewType() && isBearingOnBottom ? 1 : 0;
         float temp = getChildAt(startIndex).getRotation();
-        startIndex++;
         if (targetAngle == 0 && temp > 180) {
             temp = 360 - temp;
         }
@@ -572,6 +572,10 @@ public class FanLayout extends ViewGroup {
         }
     }
 
+    public void setSelection(int index) {
+
+    }
+
     public void setBearingOnBottom(boolean isBearingOnBottom) {
         if (this.isBearingOnBottom != isBearingOnBottom) {
             this.isBearingOnBottom = isBearingOnBottom;
@@ -662,6 +666,10 @@ public class FanLayout extends ViewGroup {
 
     public boolean isBearingView(View view) {
         return view == mBearingView;
+    }
+
+    public void setFixingAnimationDuration(int duration) {
+        mFixingAnimationDuration = duration;
     }
 
     public int getBearingType() {
