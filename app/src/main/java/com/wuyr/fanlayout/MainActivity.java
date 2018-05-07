@@ -6,14 +6,16 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Switch;
 
 /**
  * Created by wuyr on 18-5-5 下午6:14.
  */
-public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener, CompoundButton.OnCheckedChangeListener {
+public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener, CompoundButton.OnCheckedChangeListener, FanLayout.OnItemRotateListener {
 
     private FanLayout mFanLayout;
 
@@ -26,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         ((Switch) findViewById(R.id.auto_select)).setOnCheckedChangeListener(this);
         ((Switch) findViewById(R.id.bearing_can_roll)).setOnCheckedChangeListener(this);
         ((Switch) findViewById(R.id.bearing_on_bottom)).setOnCheckedChangeListener(this);
+        ((Switch) findViewById(R.id.item_direction_is_fixed)).setOnCheckedChangeListener(this);
         ((SeekBar) findViewById(R.id.radius)).setOnSeekBarChangeListener(this);
         ((SeekBar) findViewById(R.id.item_offset)).setOnSeekBarChangeListener(this);
         ((SeekBar) findViewById(R.id.bearing_offset)).setOnSeekBarChangeListener(this);
@@ -35,21 +38,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             @Override
             public void onSelected(View item) {
 
-            }
-        });
-        mFanLayout.setOnItemRotateListener(new FanLayout.OnItemRotateListener() {
-            @Override
-            public void onRotate(float rotation) {
-//                for (int i = 0; i < mFanLayout.getChildCount(); i++) {
-//                    View v = mFanLayout.getChildAt(i);
-//                    if (!mFanLayout.isBearingView(v)) {
-//                        ViewGroup viewGroup = (ViewGroup) v;
-//                        for (int j = 0; j < viewGroup.getChildCount(); j++) {
-//                            View child = viewGroup.getChildAt(j);
-//                            child.setRotation(-viewGroup.getRotation());
-//                        }
-//                    }
-//                }
             }
         });
     }
@@ -97,9 +85,33 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         }
     }
 
+    private int[] mIds;
+
+    {
+        mIds = new int[12];
+        for (int i = 0; i < mIds.length; i++) {
+            mIds[i] = 0x7f060054 + i;
+        }
+    }
+
     @SuppressLint("InflateParams")
     private View getView() {
-        return LayoutInflater.from(this).inflate(R.layout.item, null);
+        ViewGroup viewGroup = (ViewGroup) LayoutInflater.from(this).inflate(R.layout.item, null);
+        int index = mFanLayout.getChildCount();
+        if (mFanLayout.getBearingType() == FanLayout.TYPE_VIEW) {
+            index--;
+        }
+        if (index >= mIds.length) {
+            index %= mIds.length;
+        }
+        int id = mIds[index];
+        for (int i = 0; i < viewGroup.getChildCount(); i++) {
+            View view = viewGroup.getChildAt(i);
+            if (view instanceof ImageView) {
+                ((ImageView) view).setImageResource(id);
+            }
+        }
+        return viewGroup;
     }
 
     @Override
@@ -141,8 +153,40 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             case R.id.bearing_on_bottom:
                 mFanLayout.setBearingOnBottom(isChecked);
                 break;
+            case R.id.item_direction_is_fixed:
+                if (isChecked) {
+                    mFanLayout.setOnItemRotateListener(this);
+                    onRotate(0);
+                } else {
+                    mFanLayout.setOnItemRotateListener(null);
+                    for (int i = 0; i < mFanLayout.getChildCount(); i++) {
+                        View v = mFanLayout.getChildAt(i);
+                        if (!mFanLayout.isBearingView(v)) {
+                            ViewGroup viewGroup = (ViewGroup) v;
+                            for (int j = 0; j < viewGroup.getChildCount(); j++) {
+                                View child = viewGroup.getChildAt(j);
+                                child.setRotation(0);
+                            }
+                        }
+                    }
+                }
+                break;
             default:
                 break;
+        }
+    }
+
+    @Override
+    public void onRotate(float rotation) {
+        for (int i = 0; i < mFanLayout.getChildCount(); i++) {
+            View v = mFanLayout.getChildAt(i);
+            if (!mFanLayout.isBearingView(v)) {
+                ViewGroup viewGroup = (ViewGroup) v;
+                for (int j = 0; j < viewGroup.getChildCount(); j++) {
+                    View child = viewGroup.getChildAt(j);
+                    child.setRotation(-viewGroup.getRotation());
+                }
+            }
         }
     }
 }

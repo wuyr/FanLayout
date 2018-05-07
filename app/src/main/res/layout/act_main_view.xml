@@ -8,9 +8,9 @@
         android:id="@+id/fan_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:bearing_color="#9F55"
         app:bearing_layout="@layout/bearing_view"
-        app:bearing_type="view"
-        app:color="#9F55" />
+        app:bearing_type="view" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -33,7 +33,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="add item"
+                    android:text="@string/add_item"
                     android:textSize="12sp" />
 
                 <Button
@@ -42,7 +42,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="remove item"
+                    android:text="@string/remove_item"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -56,18 +56,18 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="auto select"
+                    android:text="@string/auto_select"
                     android:textColor="@color/colorPrimary"
-                    android:textSize="18sp" />
+                    android:textSize="16sp" />
 
                 <Switch
                     android:id="@+id/bearing_can_roll"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="bearing can roll"
+                    android:text="@string/bearing_can_roll"
                     android:textColor="@color/colorPrimary"
-                    android:textSize="18sp" />
+                    android:textSize="16sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -81,9 +81,24 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginStart="4dp"
-                    android:text="bearing on bottom"
+                    android:text="@string/bearing_on_bottom"
                     android:textColor="@color/colorPrimary"
                     android:textSize="18sp" />
+
+                <Switch
+                    android:id="@+id/item_direction_is_fixed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="@string/item_direction_is_fixed"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/view_mode"
@@ -92,7 +107,7 @@
                     android:layout_gravity="center"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="view mode"
+                    android:text="@string/view_mode"
                     android:textSize="12sp" />
 
                 <Button
@@ -102,7 +117,7 @@
                     android:layout_gravity="center"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="color mode"
+                    android:text="@string/color_mode"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -117,7 +132,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="left"
+                    android:text="@string/left"
                     android:textSize="12sp" />
 
                 <Button
@@ -126,7 +141,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="right"
+                    android:text="@string/right"
                     android:textSize="12sp" />
 
                 <Button
@@ -135,7 +150,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="top"
+                    android:text="@string/top"
                     android:textSize="12sp" />
 
                 <Button
@@ -144,7 +159,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="bottom"
+                    android:text="@string/bottom"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -159,7 +174,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="l_t"
+                    android:text="@string/l_t"
                     android:textSize="12sp" />
 
                 <Button
@@ -168,7 +183,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="r_t"
+                    android:text="@string/r_t"
                     android:textSize="12sp" />
 
                 <Button
@@ -177,7 +192,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="l_b"
+                    android:text="@string/l_b"
                     android:textSize="12sp" />
 
                 <Button
@@ -186,7 +201,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
-                    android:text="r_b"
+                    android:text="@string/r_b"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -200,7 +215,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginStart="4dp"
-                    android:text="bearing radius"
+                    android:text="@string/bearing_radius"
                     android:textColor="@color/colorPrimary"
                     android:textSize="18sp" />
 
@@ -223,7 +238,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginStart="4dp"
-                    android:text="bearing offset"
+                    android:text="@string/bearing_offset"
                     android:textColor="@color/colorPrimary"
                     android:textSize="18sp" />
 
@@ -246,7 +261,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginStart="4dp"
-                    android:text="items offset"
+                    android:text="@string/items_offset"
                     android:textColor="@color/colorPrimary"
                     android:textSize="18sp" />
 

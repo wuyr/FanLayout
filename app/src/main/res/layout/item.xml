@@ -10,33 +10,33 @@
         android:layout_height="54dp"
         android:layout_weight="1"
         android:adjustViewBounds="true"
-        android:src="@drawable/ic_0" />
+        tools:src="@drawable/ic_0" />
 
     <ImageView
         android:layout_width="0dp"
         android:layout_height="54dp"
         android:layout_weight="1"
         android:adjustViewBounds="true"
-        android:src="@drawable/ic_0" />
+        tools:src="@drawable/ic_0" />
 
     <ImageView
         android:layout_width="0dp"
         android:layout_height="54dp"
         android:layout_weight="1"
         android:adjustViewBounds="true"
-        android:src="@drawable/ic_0" />
+        tools:src="@drawable/ic_0" />
 
     <ImageView
         android:layout_width="0dp"
         android:layout_height="54dp"
         android:layout_weight="1"
         android:adjustViewBounds="true"
-        android:src="@drawable/ic_0" />
+        tools:src="@drawable/ic_0" />
 
     <ImageView
         android:layout_width="0dp"
         android:layout_height="54dp"
         android:layout_weight="1"
         android:adjustViewBounds="true"
-        android:src="@drawable/ic_0" />
+        tools:src="@drawable/ic_0" />
 </LinearLayout>
