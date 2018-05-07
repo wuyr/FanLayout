@@ -25,12 +25,13 @@ import java.lang.annotation.RetentionPolicy;
  */
 public class FanLayout extends ViewGroup {
 
-    @IntDef({GRAVITY_LEFT, GRAVITY_RIGHT, GRAVITY_TOP, GRAVITY_BOTTOM})
+    @IntDef({LEFT, RIGHT, TOP, BOTTOM, LEFT_TOP, LEFT_BOTTOM, RIGHT_TOP, RIGHT_BOTTOM})
     @Retention(RetentionPolicy.SOURCE)
     private @interface Gravity {
     }
 
-    public static final int GRAVITY_LEFT = 0, GRAVITY_RIGHT = 1, GRAVITY_TOP = 2, GRAVITY_BOTTOM = 3;
+    public static final int LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3,
+            LEFT_TOP = 4, LEFT_BOTTOM = 5, RIGHT_TOP = 6, RIGHT_BOTTOM = 7;
     private int mRadius;
     private int mCenterOffset;
     private int mItemOffset;
@@ -43,6 +44,7 @@ public class FanLayout extends ViewGroup {
     private boolean isClockwiseScrolling;
     private boolean isShouldBeGetY;
     private OnItemSelectedListener mOnItemSelectedListener;
+    private OnItemRotateListener mOnItemRotateListener;
 
     public FanLayout(Context context) {
         this(context, null);
@@ -56,11 +58,11 @@ public class FanLayout extends ViewGroup {
         super(context, attrs, defStyleAttr);
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.FanLayout, defStyleAttr, 0);
-        mRadius = a.getDimensionPixelSize(R.styleable.FanLayout_radius, 0);
-        int paintColor = a.getColor(R.styleable.FanLayout_color, Color.BLACK);
+        mRadius = a.getDimensionPixelSize(R.styleable.FanLayout_bearing_radius, 0);
+        int paintColor = a.getColor(R.styleable.FanLayout_primary_color, Color.BLACK);
         mCenterOffset = a.getDimensionPixelSize(R.styleable.FanLayout_center_offset, 0);
         mItemOffset = a.getDimensionPixelSize(R.styleable.FanLayout_item_offset, 0);
-        mCurrentGravity = a.getInteger(R.styleable.FanLayout_center_gravity, GRAVITY_LEFT);
+        mCurrentGravity = a.getInteger(R.styleable.FanLayout_center_gravity, LEFT);
         a.recycle();
 
         mPaint = new Paint();
@@ -143,16 +145,12 @@ public class FanLayout extends ViewGroup {
     @Override
     public void computeScroll() {
         if (mScroller.computeScrollOffset()) {
-//            if (isFixingPosition) {
-//                rotation(mScroller.getCurrY());
-//            } else {
             float y = ((isShouldBeGetY ? mScroller.getCurrY() : mScroller.getCurrX()) * .3F);
             if (mLastScrollOffset != 0) {
                 float offset = Math.abs(y - mLastScrollOffset);
                 rotation(isClockwiseScrolling ? offset : -offset);
             }
             mLastScrollOffset = y;
-//            }
             invalidate();
         } else if (mScroller.isFinished()) {
             mLastScrollOffset = 0;
@@ -162,16 +160,28 @@ public class FanLayout extends ViewGroup {
             }
             int targetAngle;
             switch (mCurrentGravity) {
-                case GRAVITY_RIGHT:
+                case RIGHT:
                     targetAngle = 180;
                     break;
-                case GRAVITY_TOP:
+                case TOP:
                     targetAngle = 90;
                     break;
-                case GRAVITY_BOTTOM:
+                case BOTTOM:
                     targetAngle = 270;
                     break;
-                case GRAVITY_LEFT:
+                case LEFT_TOP:
+                    targetAngle = 45;
+                    break;
+                case LEFT_BOTTOM:
+                    targetAngle = 315;
+                    break;
+                case RIGHT_TOP:
+                    targetAngle = 135;
+                    break;
+                case RIGHT_BOTTOM:
+                    targetAngle = 225;
+                    break;
+                case LEFT:
                 default:
                     targetAngle = 0;
                     break;
@@ -182,15 +192,13 @@ public class FanLayout extends ViewGroup {
                 targetAngle = 360 - targetAngle;
             }
             float angle = Math.abs(rotation - fixRotation(targetAngle));
-            ValueAnimator animator = ValueAnimator.ofFloat(0, rotation > fixRotation(targetAngle) ? -angle : angle).setDuration(500);
+            ValueAnimator animator = ValueAnimator.ofFloat(0, rotation > fixRotation(targetAngle) ? -angle : angle).setDuration(250);
             animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
                     float currentValue = (float) animation.getAnimatedValue();
                     if (mLastScrollOffset != 0) {
-                        float offset = currentValue - mLastScrollOffset;
-                        LogUtil.print(offset);
-                        rotation(offset);
+                        rotation(currentValue - mLastScrollOffset);
                     }
                     mLastScrollOffset = currentValue;
                 }
@@ -264,13 +272,8 @@ public class FanLayout extends ViewGroup {
             view.setRotation(fixRotation(view.getRotation() + rotation));
 //            LogUtil.print(view.getRotation());
         }
-    }
-
-    private void rotationAbsolute(float rotation) {
-        int childCount = getChildCount();
-        float angle = 360F / childCount;
-        for (int i = 0; i < childCount; i++) {
-            getChildAt(i).setRotation(fixRotation(rotation + i * angle));
+        if (mOnItemRotateListener != null) {
+            mOnItemRotateListener.onRotate(rotation);
         }
     }
 
@@ -298,17 +301,42 @@ public class FanLayout extends ViewGroup {
         int totalWidth = getWidth();
         int totalHeight = getHeight();
         switch (mCurrentGravity) {
-            case GRAVITY_RIGHT:
+            case RIGHT:
                 cx = totalWidth;
-            case GRAVITY_LEFT:
-                cx += mCenterOffset;
                 cy = totalHeight / 2;
+                cx -= mCenterOffset;
                 break;
-            case GRAVITY_BOTTOM:
+            case LEFT:
+                cy = totalHeight / 2;
+                cx += mCenterOffset;
+                break;
+            case BOTTOM:
                 cy = totalHeight;
-            case GRAVITY_TOP:
-                cy += mCenterOffset;
                 cx = totalWidth / 2;
+                cy -= mCenterOffset;
+                break;
+            case TOP:
+                cx = totalWidth / 2;
+                cy += mCenterOffset;
+                break;
+            case RIGHT_BOTTOM:
+                cx = totalWidth;
+                cy = totalHeight;
+                cx -= mCenterOffset;
+                cy -= mCenterOffset;
+                break;
+            case LEFT_BOTTOM:
+                cy = totalHeight;
+                cx += mCenterOffset;
+                cy -= mCenterOffset;
+                break;
+            case RIGHT_TOP:
+                cx = totalWidth;
+                cx -= mCenterOffset;
+                cy += mCenterOffset;
+                break;
+            case LEFT_TOP:
+                cx = cy = mCenterOffset;
                 break;
             default:
                 break;
@@ -335,7 +363,6 @@ public class FanLayout extends ViewGroup {
         setMeasuredDimension(size, size);
     }
 
-
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         int baseLeft = mPivotX + mRadius + mItemOffset;
@@ -358,7 +385,7 @@ public class FanLayout extends ViewGroup {
 //        mPaint.setColor(Color.BLUE);
 //        mPaint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(mPivotX, mPivotY, mRadius, mPaint);
-        canvas.drawLine(mPivotX, mPivotY, getWidth(), mPivotY, mPaint);
+//        canvas.drawLine(mPivotX, mPivotY, getWidth(), mPivotY, mPaint);
 //        canvas.drawPoint(mPivotX, mPivotY, mPaint);
 
 //        mPaint.setColor(Color.DKGRAY);
@@ -367,11 +394,6 @@ public class FanLayout extends ViewGroup {
 //        canvas.drawLine(mStartX, mStartY, mEndX, mEndY, mPaint);
 //        canvas.drawLine(mPivotX, mPivotY, mEndX, mEndY, mPaint);
 //        canvas.drawLine(mStartX, mStartY, mPivotX, mPivotY, mPaint);
-    }
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        updateCircleCenterPoint();
     }
 
     @Override
@@ -418,6 +440,14 @@ public class FanLayout extends ViewGroup {
 
     public interface OnItemSelectedListener {
         void onSelected(View item);
+    }
+
+    public void setOnItemRotateListener(OnItemRotateListener listener) {
+        mOnItemRotateListener = listener;
+    }
+
+    public interface OnItemRotateListener {
+        void onRotate(float rotation);
     }
 
     public static void main(String[] args) {

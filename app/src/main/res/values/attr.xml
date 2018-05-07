@@ -1,15 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="FanLayout">
-        <attr name="radius" format="dimension" />
-        <attr name="color" format="color" />
+        <!--轴承半径-->
+        <attr name="bearing_radius" format="dimension" />
+        <!--轴承的挂载位置-->
         <attr name="center_gravity" format="enum">
             <enum name="left" value="0" />
             <enum name="right" value="1" />
             <enum name="top" value="2" />
             <enum name="bottom" value="3" />
+            <enum name="left_top" value="4" />
+            <enum name="left_bottom" value="5" />
+            <enum name="right_top" value="6" />
+            <enum name="right_bottom" value="7" />
         </attr>
+        <!--轴承偏移量-->
         <attr name="center_offset" format="dimension" />
+        <!--item偏移量-->
         <attr name="item_offset" format="dimension" />
+        <!--轴承是否可以转动-->
+        <attr name="bearing_can_roll" format="boolean" />
+        <!--轴承是否在底部-->
+        <attr name="bearing_on_bottom" format="boolean" />
+        <!--轴承类型-->
+        <attr name="bearing_type" format="enum">
+            <enum name="color" value="0" />
+            <enum name="view" value="1" />
+        </attr>
+        <!--主色-->
+        <attr name="primary_color" format="color" />
+        <!--副色 (当type=color时才有效)-->
+        <attr name="secondary_color" format="color" />
+        <!--自定义的轴承布局 (当type=view时才有效)-->
+        <attr name="bearing_layout" format="reference" />
     </declare-styleable>
 </resources>

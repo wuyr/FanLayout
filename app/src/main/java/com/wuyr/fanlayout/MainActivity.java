@@ -3,10 +3,11 @@ package com.wuyr.fanlayout;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 /**
  * Created by wuyr on 18-5-5 下午6:14.
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 //                view.setPivotX(progress - 250);
-                mFanLayout.setItemOffset(progress - seekBar.getMax()/2);
+                mFanLayout.setItemOffset(progress - seekBar.getMax() / 2);
             }
 
             @Override
@@ -72,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 //                view.setPivotY(progress - 250);
-                mFanLayout.setCenterOffset(progress - seekBar.getMax()/2);
+                mFanLayout.setCenterOffset(progress - seekBar.getMax() / 2);
             }
 
             @Override
@@ -85,21 +86,54 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+        mFanLayout.setOnItemSelectedListener(new FanLayout.OnItemSelectedListener() {
+            Toast toast = Toast.makeText(MainActivity.this, "", Toast.LENGTH_SHORT);
+
+            @Override
+            public void onSelected(View item) {
+//                toast.setText("选中了: " + ((TextView) item).getText().toString());
+//                toast.show();
+            }
+        });
+        mFanLayout.setOnItemRotateListener(new FanLayout.OnItemRotateListener() {
+            @Override
+            public void onRotate(float rotation) {
+                for (int i = 0; i < mFanLayout.getChildCount(); i++) {
+                    ViewGroup viewGroup = (ViewGroup) mFanLayout.getChildAt(i);
+                    for (int j = 0; j < viewGroup.getChildCount(); j++) {
+                        View child = viewGroup.getChildAt(j);
+                        child.setRotation(-viewGroup.getRotation());
+                    }
+                }
+            }
+        });
     }
 
     public void handleOnClick(View view) {
         switch (view.getId()) {
             case R.id.left:
-                mFanLayout.setGravity(FanLayout.GRAVITY_LEFT);
+                mFanLayout.setGravity(FanLayout.LEFT);
                 break;
             case R.id.right:
-                mFanLayout.setGravity(FanLayout.GRAVITY_RIGHT);
+                mFanLayout.setGravity(FanLayout.RIGHT);
                 break;
             case R.id.top:
-                mFanLayout.setGravity(FanLayout.GRAVITY_TOP);
+                mFanLayout.setGravity(FanLayout.TOP);
                 break;
             case R.id.bottom:
-                mFanLayout.setGravity(FanLayout.GRAVITY_BOTTOM);
+                mFanLayout.setGravity(FanLayout.BOTTOM);
+                break;
+            case R.id.left_top:
+                mFanLayout.setGravity(FanLayout.LEFT_TOP);
+                break;
+            case R.id.right_top:
+                mFanLayout.setGravity(FanLayout.RIGHT_TOP);
+                break;
+            case R.id.left_bottom:
+                mFanLayout.setGravity(FanLayout.LEFT_BOTTOM);
+                break;
+            case R.id.right_bottom:
+                mFanLayout.setGravity(FanLayout.RIGHT_BOTTOM);
                 break;
             case R.id.add_item:
                 mFanLayout.addView(getView());
@@ -113,10 +147,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private View getView() {
-        Button button = new Button(this);
-        button.setLayoutParams(new ViewGroup.LayoutParams(300, ViewGroup.LayoutParams.WRAP_CONTENT));
-        button.setText(String.valueOf(mFanLayout.getChildCount()));
-        return button;
+//        Button button = new Button(this);
+//        button.setLayoutParams(new ViewGroup.LayoutParams(300, ViewGroup.LayoutParams.WRAP_CONTENT));
+//        button.setText(String.valueOf(mFanLayout.getChildCount()));
+//        return button;
+        return LayoutInflater.from(this).inflate(R.layout.item, null);
     }
 }
 
