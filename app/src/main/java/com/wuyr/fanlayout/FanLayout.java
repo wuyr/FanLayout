@@ -10,7 +10,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.ColorInt;
+import android.support.annotation.FloatRange;
 import android.support.annotation.IntDef;
+import android.support.annotation.LayoutRes;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -53,6 +55,8 @@ public class FanLayout extends ViewGroup {
     private boolean isBearingCanRoll;
     private boolean isBearingOnBottom;
     private int mCurrentBearingType;
+    private int mBearingColor;
+    private int mBearingLayoutId;
     private View mBearingView;
     private Paint mPaint;
     private Scroller mScroller;//平滑滚动辅助
@@ -61,6 +65,7 @@ public class FanLayout extends ViewGroup {
     private boolean isShouldBeGetY;
     private int mTouchSlop;//触发滑动的最小距离
     private boolean isBeingDragged;//已经开始了拖动
+    private float mScrollAvailabilityRatio;//滑动的利用率
     private ValueAnimator mAnimator;
     private OnItemSelectedListener mOnItemSelectedListener;
     private OnItemRotateListener mOnItemRotateListener;
@@ -78,6 +83,7 @@ public class FanLayout extends ViewGroup {
 
         initAttrs(context, attrs, defStyleAttr);
 
+        mScrollAvailabilityRatio = .3F;
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop();
         mScroller = new Scroller(getContext());
@@ -91,18 +97,18 @@ public class FanLayout extends ViewGroup {
         isAutoSelect = a.getBoolean(R.styleable.FanLayout_auto_select, false);
         mCurrentBearingType = a.getInteger(R.styleable.FanLayout_bearing_type, TYPE_COLOR);
         if (mCurrentBearingType == TYPE_VIEW) {
-            int bearingLayoutId = a.getResourceId(R.styleable.FanLayout_bearing_layout, 0);
-            if (bearingLayoutId == 0) {
-                throw new IllegalStateException("bearing layout not found!");
+            mBearingLayoutId = a.getResourceId(R.styleable.FanLayout_bearing_layout, 0);
+            if (mBearingLayoutId == 0) {
+                throw new IllegalStateException("bearing layout not set!");
             } else {
-                mBearingView = LayoutInflater.from(context).inflate(bearingLayoutId, this, false);
+                mBearingView = LayoutInflater.from(context).inflate(mBearingLayoutId, this, false);
                 addView(mBearingView);
             }
         } else {
             mRadius = a.getDimensionPixelSize(R.styleable.FanLayout_bearing_radius, 0);
             mPaint = new Paint();
             mPaint.setAntiAlias(true);
-            mPaint.setColor(a.getColor(R.styleable.FanLayout_bearing_color, Color.BLACK));
+            mPaint.setColor(mBearingColor = a.getColor(R.styleable.FanLayout_bearing_color, Color.BLACK));
             setWillNotDraw(false);
         }
         mBearingOffset = a.getDimensionPixelSize(R.styleable.FanLayout_bearing_offset, 0);
@@ -182,7 +188,7 @@ public class FanLayout extends ViewGroup {
     @Override
     public void computeScroll() {
         if (mScroller.computeScrollOffset()) {
-            float y = ((isShouldBeGetY ? mScroller.getCurrY() : mScroller.getCurrX()) * .3F);
+            float y = ((isShouldBeGetY ? mScroller.getCurrY() : mScroller.getCurrX()) * mScrollAvailabilityRatio);
             if (mLastScrollOffset != 0) {
                 float offset = Math.abs(y - mLastScrollOffset);
                 rotation(isClockwiseScrolling ? offset : -offset);
@@ -464,7 +470,7 @@ public class FanLayout extends ViewGroup {
             int width = mBearingView.getMeasuredWidth() / 2;
             int height = mBearingView.getMeasuredHeight() / 2;
             mBearingView.layout(mPivotX - width, mPivotY - height, mPivotX + width, mPivotY + height);
-            mBearingView.setRotation(0);
+            mBearingView.setRotation(isBearingCanRoll ? mBearingView.getRotation() : 0);
             startIndex = 1;
         }
         int childCount = getChildCount();
@@ -480,18 +486,18 @@ public class FanLayout extends ViewGroup {
                     //更新旋转的中心点
                     view.setPivotX(width + mRadius + mItemOffset);
                     view.setPivotY(height);
-                    view.setRotation(i * angle);
+                    view.setRotation(view.getRotation() + i * angle);
                 } else {
                     int baseLeft = mPivotX + mRadius + mItemOffset;
                     view.layout(baseLeft, mPivotY - height, baseLeft + width, mPivotY + height);
                     //更新旋转的中心点
                     view.setPivotX(-mRadius - mItemOffset);
                     view.setPivotY(height);
-                    view.setRotation(i * angle);
+                    view.setRotation(view.getRotation() + i * angle);
                 }
             }
         }
-
+        startFixingAnimation();
     }
 
     @Override
@@ -530,13 +536,13 @@ public class FanLayout extends ViewGroup {
     @Override
     public void removeViewAt(int index) {
         if (mCurrentBearingType == TYPE_VIEW && getChildAt(index) == mBearingView) {
-            if (!isBearingOnBottom) {
+            if (isBearingOnBottom) {
+                return;
+            } else {
                 index--;
                 if (getChildCount() - 1 < 1) {
                     return;
                 }
-            } else {
-                return;
             }
         }
         super.removeViewAt(index);
@@ -551,11 +557,42 @@ public class FanLayout extends ViewGroup {
         }
     }
 
-    public void setRadius(int radius) {
-        if (mRadius != radius && mCurrentBearingType == TYPE_COLOR) {
-            mRadius = radius;
+    public void setScrollAvailabilityRatio(@FloatRange(from = 0.0, to = 1.0) float ratio) {
+        mScrollAvailabilityRatio = ratio;
+    }
+
+    public void setAutoSelect(boolean isAutoSelect) {
+        if (this.isAutoSelect != isAutoSelect) {
+            this.isAutoSelect = isAutoSelect;
             requestLayout();
         }
+    }
+
+    public void setBearingCanRoll(boolean isBearingCanRoll) {
+        if (this.isBearingCanRoll != isBearingCanRoll) {
+            this.isBearingCanRoll = isBearingCanRoll;
+            requestLayout();
+        }
+    }
+
+    public void setBearingOnBottom(boolean isBearingOnBottom) {
+        if (this.isBearingOnBottom != isBearingOnBottom) {
+            this.isBearingOnBottom = isBearingOnBottom;
+            requestLayout();
+        }
+    }
+
+    public void setRadius(int radius) {
+        if (mRadius != radius) {
+            mRadius = radius;
+            if (mCurrentBearingType == TYPE_COLOR) {
+                requestLayout();
+            }
+        }
+    }
+
+    public void setBearingLayoutId(@LayoutRes int layoutId) {
+        mBearingLayoutId = layoutId;
     }
 
     public void setBearingOffset(int centerOffset) {
@@ -580,15 +617,39 @@ public class FanLayout extends ViewGroup {
     }
 
     public void setBearingColor(@ColorInt int color) {
-        if (mCurrentBearingType == TYPE_COLOR && mPaint != null) {
-            mPaint.setColor(color);
-            invalidate();
+        if (mPaint != null) {
+            mPaint.setColor(mBearingColor = color);
+            if (mCurrentBearingType == TYPE_COLOR) {
+                invalidate();
+            }
         }
     }
 
     public void setBearingType(@BearingType int type) {
-        mCurrentBearingType = type;
-        requestLayout();
+        if (mCurrentBearingType != type) {
+            mCurrentBearingType = type;
+            if (mCurrentBearingType == TYPE_VIEW) {
+                if (mBearingLayoutId == 0) {
+                    throw new IllegalStateException("bearing layout not set!");
+                } else {
+                    mBearingView = LayoutInflater.from(getContext()).inflate(mBearingLayoutId, this, false);
+                    addView(mBearingView);
+                }
+                setWillNotDraw(true);
+            } else {
+                if (mBearingView != null) {
+                    removeView(mBearingView);
+                    mBearingView = null;
+                }
+                if (mPaint == null) {
+                    mPaint = new Paint();
+                    mPaint.setAntiAlias(true);
+                    mPaint.setColor(mBearingColor);
+                }
+                setWillNotDraw(false);
+            }
+            requestLayout();
+        }
     }
 
     public boolean isBearingView(View view) {

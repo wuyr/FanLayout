@@ -1,19 +1,21 @@
 package com.wuyr.fanlayout;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
-import android.widget.Toast;
+import android.widget.Switch;
 
 /**
  * Created by wuyr on 18-5-5 下午6:14.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener, CompoundButton.OnCheckedChangeListener {
 
-    FanLayout mFanLayout;
+    private FanLayout mFanLayout;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -21,70 +23,18 @@ public class MainActivity extends AppCompatActivity {
         LogUtil.setDebugLevel(LogUtil.ERROR);
         setContentView(R.layout.act_main_view);
         mFanLayout = findViewById(R.id.fan_layout);
-        SeekBar radius = findViewById(R.id.radius);
-        SeekBar itemOffset = findViewById(R.id.item_offset);
-        SeekBar centerOffset = findViewById(R.id.bearing_offset);
-        radius.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-//                Log.e("pX", view.getPivotX() + "");
-//                Log.e("pY", view.getPivotY() + "");
-//                LogUtil.print(progress);
-//                view.setRotation(progress);
-                mFanLayout.setRadius(progress);
-            }
+        ((Switch) findViewById(R.id.auto_select)).setOnCheckedChangeListener(this);
+        ((Switch) findViewById(R.id.bearing_can_roll)).setOnCheckedChangeListener(this);
+        ((Switch) findViewById(R.id.bearing_on_bottom)).setOnCheckedChangeListener(this);
+        ((SeekBar) findViewById(R.id.radius)).setOnSeekBarChangeListener(this);
+        ((SeekBar) findViewById(R.id.item_offset)).setOnSeekBarChangeListener(this);
+        ((SeekBar) findViewById(R.id.bearing_offset)).setOnSeekBarChangeListener(this);
 
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-        itemOffset.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-//                view.setPivotX(progress - 250);
-                mFanLayout.setItemOffset(progress - seekBar.getMax() / 2);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-        centerOffset.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-//                view.setPivotY(progress - 250);
-                mFanLayout.setBearingOffset(progress - seekBar.getMax() / 2);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
         mFanLayout.setOnItemSelectedListener(new FanLayout.OnItemSelectedListener() {
-            Toast toast = Toast.makeText(MainActivity.this, "", Toast.LENGTH_SHORT);
 
             @Override
             public void onSelected(View item) {
-//                toast.setText("选中了: " + ((TextView) item).getText().toString());
-//                toast.show();
+
             }
         });
         mFanLayout.setOnItemRotateListener(new FanLayout.OnItemRotateListener() {
@@ -136,17 +86,64 @@ public class MainActivity extends AppCompatActivity {
             case R.id.remove_item:
                 mFanLayout.removeViewAt(mFanLayout.getChildCount() - 1);
                 break;
+            case R.id.view_mode:
+                mFanLayout.setBearingType(FanLayout.TYPE_VIEW);
+                break;
+            case R.id.color_mode:
+                mFanLayout.setBearingType(FanLayout.TYPE_COLOR);
+                break;
             default:
                 break;
         }
     }
 
+    @SuppressLint("InflateParams")
     private View getView() {
-//        Button button = new Button(this);
-//        button.setLayoutParams(new ViewGroup.LayoutParams(300, ViewGroup.LayoutParams.WRAP_CONTENT));
-//        button.setText(String.valueOf(mFanLayout.getChildCount()));
-//        return button;
         return LayoutInflater.from(this).inflate(R.layout.item, null);
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        switch (seekBar.getId()) {
+            case R.id.radius:
+                mFanLayout.setRadius(progress);
+                break;
+            case R.id.item_offset:
+                mFanLayout.setItemOffset(progress - seekBar.getMax() / 2);
+                break;
+            case R.id.bearing_offset:
+                mFanLayout.setBearingOffset(progress - seekBar.getMax() / 2);
+                break;
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        switch (buttonView.getId()) {
+            case R.id.auto_select:
+                mFanLayout.setAutoSelect(isChecked);
+                break;
+            case R.id.bearing_can_roll:
+                mFanLayout.setBearingCanRoll(isChecked);
+                break;
+            case R.id.bearing_on_bottom:
+                mFanLayout.setBearingOnBottom(isChecked);
+                break;
+            default:
+                break;
+        }
     }
 }
 

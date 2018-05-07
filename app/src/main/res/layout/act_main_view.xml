@@ -8,13 +8,9 @@
         android:id="@+id/fan_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:auto_select="true"
-        app:bearing_can_roll="false"
         app:bearing_layout="@layout/bearing_view"
-        app:bearing_on_bottom="false"
         app:bearing_type="view"
-        app:color="#9F55"
-        app:item_offset="0dp" />
+        app:color="#9F55" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -90,18 +86,22 @@
                     android:textSize="18sp" />
 
                 <Button
+                    android:id="@+id/view_mode"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
                     android:text="view mode"
                     android:textSize="12sp" />
 
                 <Button
+                    android:id="@+id/color_mode"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_weight="1"
+                    android:onClick="handleOnClick"
                     android:text="color mode"
                     android:textSize="12sp" />
             </LinearLayout>
