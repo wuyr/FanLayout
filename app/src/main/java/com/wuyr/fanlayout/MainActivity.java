@@ -99,10 +99,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onRotate(float rotation) {
                 for (int i = 0; i < mFanLayout.getChildCount(); i++) {
-                    ViewGroup viewGroup = (ViewGroup) mFanLayout.getChildAt(i);
-                    for (int j = 0; j < viewGroup.getChildCount(); j++) {
-                        View child = viewGroup.getChildAt(j);
-                        child.setRotation(-viewGroup.getRotation());
+                    View v = mFanLayout.getChildAt(i);
+                    if (!mFanLayout.isBearingView(v)) {
+                        ViewGroup viewGroup = (ViewGroup) v;
+                        for (int j = 0; j < viewGroup.getChildCount(); j++) {
+                            View child = viewGroup.getChildAt(j);
+                            child.setRotation(-viewGroup.getRotation());
+                        }
                     }
                 }
             }

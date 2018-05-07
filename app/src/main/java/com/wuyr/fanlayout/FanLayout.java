@@ -11,6 +11,7 @@ import android.graphics.Paint;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -32,12 +33,25 @@ public class FanLayout extends ViewGroup {
 
     public static final int LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3,
             LEFT_TOP = 4, LEFT_BOTTOM = 5, RIGHT_TOP = 6, RIGHT_BOTTOM = 7;
+
+    @IntDef({TYPE_COLOR, TYPE_VIEW})
+    @Retention(RetentionPolicy.SOURCE)
+    private @interface BearingType {
+    }
+
+    public static final int TYPE_COLOR = 0, TYPE_VIEW = 1;
     private int mRadius;
     private int mCenterOffset;
     private int mItemOffset;
     private int mCurrentGravity;
     private int mPivotX, mPivotY;
     private float mStartX, mStartY;
+    private int mBearingColor;
+    private boolean isAutoSelect;
+    private boolean isBearingCanRoll;
+    private boolean isBearingOnBottom;
+    private int mCurrentBearingType;
+    private View mBearingView;
     private Paint mPaint;
     private Scroller mScroller;//平滑滚动辅助
     private VelocityTracker mVelocityTracker;//手指滑动速率搜集
@@ -57,21 +71,38 @@ public class FanLayout extends ViewGroup {
     public FanLayout(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
+        initAttrs(context, attrs, defStyleAttr);
+
+        mScroller = new Scroller(getContext());
+        mVelocityTracker = VelocityTracker.obtain();
+    }
+
+    private void initAttrs(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.FanLayout, defStyleAttr, 0);
         mRadius = a.getDimensionPixelSize(R.styleable.FanLayout_bearing_radius, 0);
-        int paintColor = a.getColor(R.styleable.FanLayout_primary_color, Color.BLACK);
+        isBearingCanRoll = a.getBoolean(R.styleable.FanLayout_bearing_can_roll, false);
+        isBearingOnBottom = a.getBoolean(R.styleable.FanLayout_bearing_on_bottom, false);
+        isAutoSelect = a.getBoolean(R.styleable.FanLayout_auto_select, false);
+        mCurrentBearingType = a.getInteger(R.styleable.FanLayout_bearing_type, TYPE_COLOR);
+        if (mCurrentBearingType == TYPE_VIEW) {
+            int bearingLayoutId = a.getResourceId(R.styleable.FanLayout_bearing_layout, 0);
+            if (bearingLayoutId == 0) {
+                throw new IllegalStateException("bearing layout not found!");
+            } else {
+                mBearingView = LayoutInflater.from(context).inflate(bearingLayoutId, this, false);
+                addView(mBearingView);
+            }
+        } else {
+            mBearingColor = a.getColor(R.styleable.FanLayout_bearing_color, Color.BLACK);
+            mPaint = new Paint();
+            mPaint.setAntiAlias(true);
+            mPaint.setColor(mBearingColor);
+            setWillNotDraw(false);
+        }
         mCenterOffset = a.getDimensionPixelSize(R.styleable.FanLayout_center_offset, 0);
         mItemOffset = a.getDimensionPixelSize(R.styleable.FanLayout_item_offset, 0);
         mCurrentGravity = a.getInteger(R.styleable.FanLayout_center_gravity, LEFT);
         a.recycle();
-
-        mPaint = new Paint();
-        mPaint.setAntiAlias(true);
-        mPaint.setColor(paintColor);
-        setWillNotDraw(false);
-
-        mScroller = new Scroller(getContext());
-        mVelocityTracker = VelocityTracker.obtain();
     }
 
     @Override
@@ -85,45 +116,7 @@ public class FanLayout extends ViewGroup {
             case MotionEvent.ACTION_DOWN:
                 break;
             case MotionEvent.ACTION_MOVE:
-                float l, t, r, b;
-                //先调整下长宽数据
-                if (mStartX > x) {
-                    r = mStartX;
-                    l = x;
-                } else {
-                    r = x;
-                    l = mStartX;
-                }
-                if (mStartY > y) {
-                    b = mStartY;
-                    t = y;
-                } else {
-                    b = y;
-                    t = mStartY;
-                }
-
-                float pA1 = Math.abs(mStartX - mPivotX);
-                float pA2 = Math.abs(mStartY - mPivotY);
-                float pB1 = Math.abs(x - mPivotX);
-                float pB2 = Math.abs(y - mPivotY);
-
-                float hypotenuse = (float) Math.sqrt(Math.pow(r - l, 2) + Math.pow(b - t, 2));
-                float lineA = (float) Math.sqrt(Math.pow(pA1, 2) + Math.pow(pA2, 2));
-                float lineB = (float) Math.sqrt(Math.pow(pB1, 2) + Math.pow(pB2, 2));
-                if (hypotenuse > 0 && lineA > 0 && lineB > 0) {
-                    float angle = (float) Math.toDegrees(Math.acos((Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)) / (2 * lineA * lineB)));
-//                    LogUtil.printf("lineA = %s lineB = %s hypotenuse = %s", lineA, lineB, hypotenuse);
-//                    LogUtil.printf("lineA^2 + lineB^2 + hypotenuse^2 = %s + %s + %s = %s", Math.pow(lineA, 2), Math.pow(lineB, 2), Math.pow(hypotenuse, 2), (Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)));
-//                    LogUtil.printf(" / 2 * lineA * lineB = 2 * %s * %s = %s", lineA, lineB, 2 * lineA * lineB);
-//                    LogUtil.printf(" lineA^2 + lineB^2 + hypotenuse^2/ 2 * lineA * lineB =%s / %s = %s", (Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)), 2 * lineA * lineB, ((Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)) / (2 * lineA * lineB)));
-//                    LogUtil.printf("cos = %s", Math.cos(((Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)) / (2 * lineA * lineB))));
-//                    LogUtil.printf("arcos = %s", Math.acos(((Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)) / (2 * lineA * lineB))));
-//                    LogUtil.print(angle);
-                    if (!Float.isNaN(angle)) {
-                        isClockwiseScrolling = isClockwise(x, y);
-                        rotation(isClockwiseScrolling ? angle : -angle);
-                    }
-                }
+                handleActionMove(x, y);
                 break;
             case MotionEvent.ACTION_UP:
                 mVelocityTracker.computeCurrentVelocity(1000);
@@ -139,8 +132,49 @@ public class FanLayout extends ViewGroup {
         return true;
     }
 
+    private void handleActionMove(float x, float y) {
+        float l, t, r, b;
+        //先调整下长宽数据
+        if (mStartX > x) {
+            r = mStartX;
+            l = x;
+        } else {
+            r = x;
+            l = mStartX;
+        }
+        if (mStartY > y) {
+            b = mStartY;
+            t = y;
+        } else {
+            b = y;
+            t = mStartY;
+        }
+
+        float pA1 = Math.abs(mStartX - mPivotX);
+        float pA2 = Math.abs(mStartY - mPivotY);
+        float pB1 = Math.abs(x - mPivotX);
+        float pB2 = Math.abs(y - mPivotY);
+
+        float hypotenuse = (float) Math.sqrt(Math.pow(r - l, 2) + Math.pow(b - t, 2));
+        float lineA = (float) Math.sqrt(Math.pow(pA1, 2) + Math.pow(pA2, 2));
+        float lineB = (float) Math.sqrt(Math.pow(pB1, 2) + Math.pow(pB2, 2));
+        if (hypotenuse > 0 && lineA > 0 && lineB > 0) {
+            float angle = (float) Math.toDegrees(Math.acos((Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)) / (2 * lineA * lineB)));
+//                    LogUtil.printf("lineA = %s lineB = %s hypotenuse = %s", lineA, lineB, hypotenuse);
+//                    LogUtil.printf("lineA^2 + lineB^2 + hypotenuse^2 = %s + %s + %s = %s", Math.pow(lineA, 2), Math.pow(lineB, 2), Math.pow(hypotenuse, 2), (Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)));
+//                    LogUtil.printf(" / 2 * lineA * lineB = 2 * %s * %s = %s", lineA, lineB, 2 * lineA * lineB);
+//                    LogUtil.printf(" lineA^2 + lineB^2 + hypotenuse^2/ 2 * lineA * lineB =%s / %s = %s", (Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)), 2 * lineA * lineB, ((Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)) / (2 * lineA * lineB)));
+//                    LogUtil.printf("cos = %s", Math.cos(((Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)) / (2 * lineA * lineB))));
+//                    LogUtil.printf("arcos = %s", Math.acos(((Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)) / (2 * lineA * lineB))));
+//                    LogUtil.print(angle);
+            if (!Float.isNaN(angle)) {
+                isClockwiseScrolling = isClockwise(x, y);
+                rotation(isClockwiseScrolling ? angle : -angle);
+            }
+        }
+    }
+
     private float mLastScrollOffset;
-    private boolean isFixingPosition;
 
     @Override
     public void computeScroll() {
@@ -152,7 +186,7 @@ public class FanLayout extends ViewGroup {
             }
             mLastScrollOffset = y;
             invalidate();
-        } else if (mScroller.isFinished()) {
+        } else if (mScroller.isFinished() && isAutoSelect) {
             mLastScrollOffset = 0;
             int childCount = getChildCount();
             if (childCount == 0) {
@@ -269,8 +303,10 @@ public class FanLayout extends ViewGroup {
     private void rotation(float rotation) {
         for (int i = 0; i < getChildCount(); i++) {
             View view = getChildAt(i);
+            if (view == mBearingView && mCurrentBearingType == TYPE_VIEW && !isBearingCanRoll) {
+                continue;
+            }
             view.setRotation(fixRotation(view.getRotation() + rotation));
-//            LogUtil.print(view.getRotation());
         }
         if (mOnItemRotateListener != null) {
             mOnItemRotateListener.onRotate(rotation);
@@ -298,8 +334,8 @@ public class FanLayout extends ViewGroup {
 
     private void updateCircleCenterPoint() {
         int cx = 0, cy = 0;
-        int totalWidth = getWidth();
-        int totalHeight = getHeight();
+        int totalWidth = getMeasuredWidth();
+        int totalHeight = getMeasuredHeight();
         switch (mCurrentGravity) {
             case RIGHT:
                 cx = totalWidth;
@@ -361,30 +397,50 @@ public class FanLayout extends ViewGroup {
             size = 2 * mRadius + mItemOffset + childMaxWidth;
         }
         setMeasuredDimension(size, size);
+        updateCircleCenterPoint();
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        int baseLeft = mPivotX + mRadius + mItemOffset;
+        int startIndex = 0;
+        if (mCurrentBearingType == TYPE_VIEW) {
+            int width = mBearingView.getMeasuredWidth() / 2;
+            int height = mBearingView.getMeasuredHeight() / 2;
+            mBearingView.layout(mPivotX - width, mPivotY - height, mPivotX + width, mPivotY + height);
+            mBearingView.setRotation(0);
+            startIndex = 1;
+        }
         int childCount = getChildCount();
-        float angle = 360F / childCount;
+        int baseLeft = mPivotX + mRadius + mItemOffset;
+        float angle = 360F / (childCount - startIndex);
         for (int i = 0; i < childCount; i++) {
             View view = getChildAt(i);
-            int height = view.getMeasuredHeight() / 2;
-            //更新旋转的中心点
-            view.setPivotX(-mRadius - mItemOffset);
-            view.setPivotY(height);
-            view.layout(baseLeft, mPivotY - height, baseLeft + view.getMeasuredWidth(), mPivotY + height);
-            view.setRotation(i * angle);
+            if (view != mBearingView) {
+                int height = view.getMeasuredHeight() / 2;
+                //更新旋转的中心点
+                view.setPivotX(-mRadius - mItemOffset);
+                view.setPivotY(height);
+                view.layout(baseLeft, mPivotY - height, baseLeft + view.getMeasuredWidth(), mPivotY + height);
+                view.setRotation(i * angle);
+            }
         }
 
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if (mCurrentBearingType == TYPE_COLOR && isBearingOnBottom) {
+            canvas.drawCircle(mPivotX, mPivotY, mRadius, mPaint);
+        }
     }
 
     @Override
     public void onDrawForeground(Canvas canvas) {
 //        mPaint.setColor(Color.BLUE);
 //        mPaint.setStyle(Paint.Style.FILL);
-        canvas.drawCircle(mPivotX, mPivotY, mRadius, mPaint);
+        if (mCurrentBearingType == TYPE_COLOR && !isBearingOnBottom) {
+            canvas.drawCircle(mPivotX, mPivotY, mRadius, mPaint);
+        }
 //        canvas.drawLine(mPivotX, mPivotY, getWidth(), mPivotY, mPaint);
 //        canvas.drawPoint(mPivotX, mPivotY, mPaint);
 
@@ -397,9 +453,26 @@ public class FanLayout extends ViewGroup {
     }
 
     @Override
-    public void requestLayout() {
-        updateCircleCenterPoint();
-        super.requestLayout();
+    public void addView(View child, int index, LayoutParams params) {
+        if (mCurrentBearingType == TYPE_VIEW && !isBearingOnBottom && getChildCount() > 0) {
+            index = 0;
+        }
+        super.addView(child, index, params);
+    }
+
+    @Override
+    public void removeViewAt(int index) {
+        if (mCurrentBearingType == TYPE_VIEW && getChildAt(index) == mBearingView) {
+            if (!isBearingOnBottom) {
+                index--;
+                if (getChildCount() - 1 < 1) {
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+        super.removeViewAt(index);
     }
 
     public void setRadius(int radius) {
@@ -428,6 +501,10 @@ public class FanLayout extends ViewGroup {
             mCurrentGravity = gravity;
             requestLayout();
         }
+    }
+
+    public boolean isBearingView(View view) {
+        return view == mBearingView;
     }
 
     public int getGravity() {

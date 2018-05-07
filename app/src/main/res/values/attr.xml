@@ -18,6 +18,8 @@
         <attr name="center_offset" format="dimension" />
         <!--item偏移量-->
         <attr name="item_offset" format="dimension" />
+        <!--滚动完毕是否可以自动选中最近的item-->
+        <attr name="auto_select" format="boolean" />
         <!--轴承是否可以转动-->
         <attr name="bearing_can_roll" format="boolean" />
         <!--轴承是否在底部-->
@@ -27,10 +29,8 @@
             <enum name="color" value="0" />
             <enum name="view" value="1" />
         </attr>
-        <!--主色-->
-        <attr name="primary_color" format="color" />
-        <!--副色 (当type=color时才有效)-->
-        <attr name="secondary_color" format="color" />
+        <!--轴承颜色 (当type=color时才有效)-->
+        <attr name="bearing_color" format="color" />
         <!--自定义的轴承布局 (当type=view时才有效)-->
         <attr name="bearing_layout" format="reference" />
     </declare-styleable>
