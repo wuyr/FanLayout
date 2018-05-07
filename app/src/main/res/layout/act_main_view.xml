@@ -1,196 +1,263 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <View
-        android:id="@+id/view"
-        android:layout_width="300dp"
-        android:layout_height="50dp"
-        android:layout_gravity="center"
-        android:background="@color/colorAccent"
-        android:visibility="gone" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <SeekBar
-            android:id="@+id/seek_bar1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="360" />
-
-        <SeekBar
-            android:id="@+id/seek_bar2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="500"
-            android:progress="250" />
-
-        <SeekBar
-            android:id="@+id/seek_bar3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="500"
-            android:progress="250" />
-    </LinearLayout>
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <com.wuyr.fanlayout.FanLayout xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/fan_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:auto_select="true"
         app:bearing_can_roll="false"
         app:bearing_layout="@layout/bearing_view"
         app:bearing_on_bottom="false"
         app:bearing_type="view"
-        app:center_gravity="left"
-        app:center_offset="0dp"
         app:color="#9F55"
-        app:item_offset="0dp">
+        app:item_offset="0dp" />
 
-        <!--<ImageView-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:adjustViewBounds="true"-->
-        <!--android:src="@mipmap/ic_launcher"-->
-        <!--android:layout_height="50dp" />-->
-
-        <!--<ImageView-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:adjustViewBounds="true"-->
-        <!--android:src="@mipmap/ic_launcher"-->
-        <!--android:layout_height="50dp" />-->
-
-    </com.wuyr.fanlayout.FanLayout>
-
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="wrap_content">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <Button
-                android:id="@+id/left"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="handleOnClick"
-                android:text="left" />
+                android:layout_gravity="bottom"
+                android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/right"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="handleOnClick"
-                android:text="right" />
+                <Button
+                    android:id="@+id/add_item"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="add item"
+                    android:textSize="12sp" />
 
-            <Button
-                android:id="@+id/top"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="handleOnClick"
-                android:text="top" />
+                <Button
+                    android:id="@+id/remove_item"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="remove item"
+                    android:textSize="12sp" />
+            </LinearLayout>
 
-            <Button
-                android:id="@+id/bottom"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="handleOnClick"
-                android:text="bottom" />
+                android:orientation="horizontal">
+
+                <Switch
+                    android:id="@+id/auto_select"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="auto select"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="18sp" />
+
+                <Switch
+                    android:id="@+id/bearing_can_roll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="bearing can roll"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="18sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Switch
+                    android:id="@+id/bearing_on_bottom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="4dp"
+                    android:text="bearing on bottom"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="18sp" />
+
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_gravity="center"
+                    android:text="view mode"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:text="color mode"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/left"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="left"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/right"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="right"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/top"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="top"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/bottom"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="bottom"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/left_top"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="l_t"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/right_top"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="r_t"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/left_bottom"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="l_b"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/right_bottom"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="r_b"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="4dp"
+                    android:text="bearing radius"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="18sp" />
+
+                <SeekBar
+                    android:id="@+id/radius"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="400"
+                    android:padding="8dp"
+                    android:progress="0" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="4dp"
+                    android:text="bearing offset"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="18sp" />
+
+                <SeekBar
+                    android:id="@+id/bearing_offset"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="1000"
+                    android:padding="8dp"
+                    android:progress="500" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="4dp"
+                    android:text="items offset"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="18sp" />
+
+                <SeekBar
+                    android:id="@+id/item_offset"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="1000"
+                    android:padding="8dp"
+                    android:progress="500" />
+            </LinearLayout>
         </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/left_top"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="handleOnClick"
-                android:text="l_t" />
-
-            <Button
-                android:id="@+id/right_top"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="handleOnClick"
-                android:text="r_t" />
-
-            <Button
-                android:id="@+id/left_bottom"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="handleOnClick"
-                android:text="l_b" />
-
-            <Button
-                android:id="@+id/right_bottom"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="handleOnClick"
-                android:text="r_b" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:orientation="vertical">
-
-        <Button
-            android:id="@+id/add_item"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="handleOnClick"
-            android:text="add item" />
-
-        <Button
-            android:id="@+id/remove_item"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="handleOnClick"
-            android:text="remove item" />
-
-        <SeekBar
-            android:id="@+id/radius"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="400"
-            android:padding="8dp"
-            android:progress="0" />
-
-        <SeekBar
-            android:id="@+id/center_offset"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:indeterminateDrawable="@color/colorPrimaryDark"
-            android:max="1000"
-            android:padding="8dp"
-            android:progress="500" />
-
-        <SeekBar
-            android:id="@+id/item_offset"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="1000"
-            android:padding="8dp"
-            android:progress="500" />
-    </LinearLayout>
-</FrameLayout>
+    </ScrollView>
+</LinearLayout>

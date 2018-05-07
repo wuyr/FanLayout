@@ -5,7 +5,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
@@ -24,14 +23,7 @@ public class MainActivity extends AppCompatActivity {
         mFanLayout = findViewById(R.id.fan_layout);
         SeekBar radius = findViewById(R.id.radius);
         SeekBar itemOffset = findViewById(R.id.item_offset);
-        SeekBar centerOffset = findViewById(R.id.center_offset);
-        final View view = findViewById(R.id.view);
-        view.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                LogUtil.print("===");
-            }
-        });
+        SeekBar centerOffset = findViewById(R.id.bearing_offset);
         radius.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -73,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 //                view.setPivotY(progress - 250);
-                mFanLayout.setCenterOffset(progress - seekBar.getMax() / 2);
+                mFanLayout.setBearingOffset(progress - seekBar.getMax() / 2);
             }
 
             @Override
@@ -98,16 +90,16 @@ public class MainActivity extends AppCompatActivity {
         mFanLayout.setOnItemRotateListener(new FanLayout.OnItemRotateListener() {
             @Override
             public void onRotate(float rotation) {
-                for (int i = 0; i < mFanLayout.getChildCount(); i++) {
-                    View v = mFanLayout.getChildAt(i);
-                    if (!mFanLayout.isBearingView(v)) {
-                        ViewGroup viewGroup = (ViewGroup) v;
-                        for (int j = 0; j < viewGroup.getChildCount(); j++) {
-                            View child = viewGroup.getChildAt(j);
-                            child.setRotation(-viewGroup.getRotation());
-                        }
-                    }
-                }
+//                for (int i = 0; i < mFanLayout.getChildCount(); i++) {
+//                    View v = mFanLayout.getChildAt(i);
+//                    if (!mFanLayout.isBearingView(v)) {
+//                        ViewGroup viewGroup = (ViewGroup) v;
+//                        for (int j = 0; j < viewGroup.getChildCount(); j++) {
+//                            View child = viewGroup.getChildAt(j);
+//                            child.setRotation(-viewGroup.getRotation());
+//                        }
+//                    }
+//                }
             }
         });
     }

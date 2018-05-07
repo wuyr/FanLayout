@@ -4,7 +4,7 @@
         <!--轴承半径-->
         <attr name="bearing_radius" format="dimension" />
         <!--轴承的挂载位置-->
-        <attr name="center_gravity" format="enum">
+        <attr name="bearing_gravity" format="enum">
             <enum name="left" value="0" />
             <enum name="right" value="1" />
             <enum name="top" value="2" />
@@ -15,7 +15,7 @@
             <enum name="right_bottom" value="7" />
         </attr>
         <!--轴承偏移量-->
-        <attr name="center_offset" format="dimension" />
+        <attr name="bearing_offset" format="dimension" />
         <!--item偏移量-->
         <attr name="item_offset" format="dimension" />
         <!--滚动完毕是否可以自动选中最近的item-->
