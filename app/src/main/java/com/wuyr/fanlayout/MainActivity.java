@@ -1,6 +1,9 @@
 package com.wuyr.fanlayout;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -33,11 +36,23 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         ((SeekBar) findViewById(R.id.item_offset)).setOnSeekBarChangeListener(this);
         ((SeekBar) findViewById(R.id.bearing_offset)).setOnSeekBarChangeListener(this);
 
+        mFanLayout.setOnItemRotateListener(this);
         mFanLayout.setOnItemSelectedListener(new FanLayout.OnItemSelectedListener() {
 
             @Override
             public void onSelected(View item) {
-
+                if (item instanceof ViewGroup) {
+                    ViewGroup viewGroup = (ViewGroup) item;
+                    for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                        View child = viewGroup.getChildAt(i);
+                        if (child instanceof ImageView) {
+                            BitmapDrawable drawable = (BitmapDrawable) ((ImageView) child).getDrawable();
+                            drawable.setTint(getResources().getColor(R.color.colorAccent));
+                            drawable.setTintMode(PorterDuff.Mode.MULTIPLY);
+                        }
+                    }
+                    isRestored = false;
+                }
             }
         });
     }
@@ -154,11 +169,10 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 mFanLayout.setBearingOnBottom(isChecked);
                 break;
             case R.id.item_direction_is_fixed:
+                isDirectionFixed = isChecked;
                 if (isChecked) {
-                    mFanLayout.setOnItemRotateListener(this);
                     onRotate(0);
                 } else {
-                    mFanLayout.setOnItemRotateListener(null);
                     for (int i = 0; i < mFanLayout.getChildCount(); i++) {
                         View v = mFanLayout.getChildAt(i);
                         if (!mFanLayout.isBearingView(v)) {
@@ -176,6 +190,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         }
     }
 
+    private boolean isDirectionFixed;
+    private boolean isRestored = true;
+
     @Override
     public void onRotate(float rotation) {
         for (int i = 0; i < mFanLayout.getChildCount(); i++) {
@@ -184,10 +201,18 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 ViewGroup viewGroup = (ViewGroup) v;
                 for (int j = 0; j < viewGroup.getChildCount(); j++) {
                     View child = viewGroup.getChildAt(j);
-                    child.setRotation(-viewGroup.getRotation());
+                    if (isDirectionFixed) {
+                        child.setRotation(-viewGroup.getRotation());
+                    }
+                    if (!isRestored && child instanceof ImageView) {
+                        BitmapDrawable drawable = (BitmapDrawable) ((ImageView) child).getDrawable();
+                        drawable.setTint(Color.TRANSPARENT);
+                        drawable.setTintMode(PorterDuff.Mode.DST);
+                    }
                 }
             }
         }
+        isRestored = true;
     }
 }
 
