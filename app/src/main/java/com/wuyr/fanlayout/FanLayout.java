@@ -178,8 +178,7 @@ public class FanLayout extends ViewGroup {
         if (hypotenuse > 0 && lineA > 0 && lineB > 0) {
             float angle = (float) Math.toDegrees(Math.acos((Math.pow(lineA, 2) + Math.pow(lineB, 2) - Math.pow(hypotenuse, 2)) / (2 * lineA * lineB)));
             if (!Float.isNaN(angle)) {
-                isClockwiseScrolling = isClockwise(x, y);
-                rotation(isClockwiseScrolling ? angle : -angle);
+                rotation((isClockwiseScrolling = isClockwise(x, y)) ? angle : -angle);
             }
         }
     }
@@ -197,9 +196,9 @@ public class FanLayout extends ViewGroup {
             }
             mLastScrollOffset = y;
             invalidate();
-        } else if (mScroller.isFinished() && isAutoSelect) {
+        } else if (mScroller.isFinished()) {
             mLastScrollOffset = 0;
-            if (isScrolled) {
+            if (isScrolled && isAutoSelect) {
                 startFixingAnimation();
                 isScrolled = false;
             }
