@@ -522,11 +522,11 @@ public class FanLayout extends ViewGroup {
                 view.setPivotX(-mRadius - mItemOffset);
             }
             view.setPivotY(height);
-            int index = isHasBottomBearing ? i - 1 : i;
             float rotation;
             if (mItemAddDirection == ADD_DIRECTION_COUNTERCLOCKWISE) {
-                rotation = 360F - index * angle;
+                rotation = 360F - i * angle;
             } else if (mItemAddDirection == ADD_DIRECTION_INTERLACED) {
+                int index = isHasBottomBearing ? i : i + 1;
                 int hitCount = 0;
                 boolean isDual = index % 2 == 0;
                 for (int j = 0; j < index; j++) {
@@ -542,7 +542,7 @@ public class FanLayout extends ViewGroup {
                 }
                 rotation = isDual ? 360F - hitCount * angle : hitCount * angle;
             } else {
-                rotation = index * angle;
+                rotation = i * angle;
             }
             view.setRotation(fixRotation(rotation));
         }
