@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         ((Switch) findViewById(R.id.bearing_can_roll)).setOnCheckedChangeListener(this);
         ((Switch) findViewById(R.id.bearing_on_bottom)).setOnCheckedChangeListener(this);
         ((Switch) findViewById(R.id.item_direction_is_fixed)).setOnCheckedChangeListener(this);
+        ((SeekBar) findViewById(R.id.item_angle_offset)).setOnSeekBarChangeListener(this);
         ((SeekBar) findViewById(R.id.radius)).setOnSeekBarChangeListener(this);
         ((SeekBar) findViewById(R.id.item_offset)).setOnSeekBarChangeListener(this);
         ((SeekBar) findViewById(R.id.bearing_offset)).setOnSeekBarChangeListener(this);
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
             @Override
             public void onSelected(View item) {
+                LogUtil.print(mFanLayout.indexOfChild(item));
                 if (item instanceof ViewGroup) {
                     ViewGroup viewGroup = (ViewGroup) item;
                     for (int i = 0; i < viewGroup.getChildCount(); i++) {
@@ -59,6 +61,21 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     public void handleOnClick(View view) {
         switch (view.getId()) {
+            case R.id.average:
+                mFanLayout.setItemLayoutMode(FanLayout.MODE_AVERAGE);
+                break;
+            case R.id.fixed:
+                mFanLayout.setItemLayoutMode(FanLayout.MODE_FIXED);
+                break;
+            case R.id.clockwise:
+                mFanLayout.setItemAddDirection(FanLayout.ADD_DIRECTION_CLOCKWISE);
+                break;
+            case R.id.counterclockwise:
+                mFanLayout.setItemAddDirection(FanLayout.ADD_DIRECTION_COUNTERCLOCKWISE);
+                break;
+            case R.id.interlaced:
+                mFanLayout.setItemAddDirection(FanLayout.ADD_DIRECTION_INTERLACED);
+                break;
             case R.id.left:
                 mFanLayout.setGravity(FanLayout.LEFT);
                 break;
@@ -132,6 +149,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         switch (seekBar.getId()) {
+            case R.id.item_angle_offset:
+                mFanLayout.setItemAngleOffset((float) progress - (float) seekBar.getMax() * .5F);
+                break;
             case R.id.radius:
                 mFanLayout.setRadius(progress);
                 break;
@@ -169,28 +189,13 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 mFanLayout.setBearingOnBottom(isChecked);
                 break;
             case R.id.item_direction_is_fixed:
-                isDirectionFixed = isChecked;
-                if (isChecked) {
-                    onRotate(0);
-                } else {
-                    for (int i = 0; i < mFanLayout.getChildCount(); i++) {
-                        View v = mFanLayout.getChildAt(i);
-                        if (!mFanLayout.isBearingView(v)) {
-                            ViewGroup viewGroup = (ViewGroup) v;
-                            for (int j = 0; j < viewGroup.getChildCount(); j++) {
-                                View child = viewGroup.getChildAt(j);
-                                child.setRotation(0);
-                            }
-                        }
-                    }
-                }
+                mFanLayout.setItemDirectionFixed(isChecked);
                 break;
             default:
                 break;
         }
     }
 
-    private boolean isDirectionFixed;
     private boolean isRestored = true;
 
     @Override
@@ -201,9 +206,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 ViewGroup viewGroup = (ViewGroup) v;
                 for (int j = 0; j < viewGroup.getChildCount(); j++) {
                     View child = viewGroup.getChildAt(j);
-                    if (isDirectionFixed) {
-                        child.setRotation(-viewGroup.getRotation());
-                    }
                     if (!isRestored && child instanceof ImageView) {
                         BitmapDrawable drawable = (BitmapDrawable) ((ImageView) child).getDrawable();
                         drawable.setTint(Color.TRANSPARENT);

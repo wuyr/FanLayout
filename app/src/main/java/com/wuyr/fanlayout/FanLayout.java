@@ -28,6 +28,7 @@ import java.lang.annotation.RetentionPolicy;
 
 /**
  * Created by wuyr on 18-5-5 下午6:15.
+ * GitHub: https://github.com/wuyr/FanLayout
  */
 public class FanLayout extends ViewGroup {
 
@@ -45,13 +46,32 @@ public class FanLayout extends ViewGroup {
     }
 
     public static final int TYPE_COLOR = 0, TYPE_VIEW = 1;
+
+    @IntDef({MODE_AVERAGE, MODE_FIXED})
+    @Retention(RetentionPolicy.SOURCE)
+    private @interface LayoutMode {
+    }
+
+    public static final int MODE_AVERAGE = 0, MODE_FIXED = 1;
+
+    @IntDef({ADD_DIRECTION_CLOCKWISE, ADD_DIRECTION_COUNTERCLOCKWISE, ADD_DIRECTION_INTERLACED})
+    @Retention(RetentionPolicy.SOURCE)
+    private @interface DirectionMode {
+    }
+
+    public static final int ADD_DIRECTION_CLOCKWISE = 0, ADD_DIRECTION_COUNTERCLOCKWISE = 1, ADD_DIRECTION_INTERLACED = 2;
     private int mFixingAnimationDuration = 300;
     private int mRadius;
     private int mBearingOffset;
     private int mItemOffset;
+    private int mItemLayoutMode;
+    private int mItemAddDirection;
+    private float mItemAngleOffset;
     private int mCurrentGravity;
+    private int mCurrentSelectionIndex;
     private int mPivotX, mPivotY;
     private float mStartX, mStartY;
+    private boolean isItemDirectionFixed;
     private boolean isAutoSelect;
     private boolean isBearingCanRoll;
     private boolean isBearingOnBottom;
@@ -66,6 +86,8 @@ public class FanLayout extends ViewGroup {
     private boolean isShouldBeGetY;
     private int mTouchSlop;//触发滑动的最小距离
     private boolean isBeingDragged;//已经开始了拖动
+    private boolean isSmoothSelection;
+    private volatile boolean isOnLayout;
     private float mScrollAvailabilityRatio;//滑动的利用率
     private ValueAnimator mAnimator;
     private OnItemSelectedListener mOnItemSelectedListener;
@@ -96,6 +118,7 @@ public class FanLayout extends ViewGroup {
         isBearingCanRoll = a.getBoolean(R.styleable.FanLayout_bearing_can_roll, false);
         isBearingOnBottom = a.getBoolean(R.styleable.FanLayout_bearing_on_bottom, false);
         isAutoSelect = a.getBoolean(R.styleable.FanLayout_auto_select, false);
+        isItemDirectionFixed = a.getBoolean(R.styleable.FanLayout_item_direction_fixed, false);
         mCurrentBearingType = a.getInteger(R.styleable.FanLayout_bearing_type, TYPE_COLOR);
         mBearingColor = a.getColor(R.styleable.FanLayout_bearing_color, Color.BLACK);
         if (isViewType()) {
@@ -105,6 +128,7 @@ public class FanLayout extends ViewGroup {
             } else {
                 mBearingView = LayoutInflater.from(context).inflate(mBearingLayoutId, this, false);
                 addView(mBearingView);
+                mCurrentSelectionIndex = 1;
             }
         } else {
             mRadius = a.getDimensionPixelSize(R.styleable.FanLayout_bearing_radius, 0);
@@ -112,6 +136,13 @@ public class FanLayout extends ViewGroup {
             mPaint.setAntiAlias(true);
             mPaint.setColor(mBearingColor);
             setWillNotDraw(false);
+        }
+        mItemAddDirection = a.getInteger(R.styleable.FanLayout_item_add_direction, ADD_DIRECTION_CLOCKWISE);
+        if ((mItemLayoutMode = a.getInteger(R.styleable.FanLayout_item_layout_mode, MODE_AVERAGE)) == MODE_FIXED) {
+            mItemAngleOffset = a.getFloat(R.styleable.FanLayout_item_angle_offset, 0);
+            if (mItemAngleOffset <= 0 || mItemAngleOffset > 360) {
+                throw new IllegalStateException("item_angle_offset must be between 1~360!");
+            }
         }
         mBearingOffset = a.getDimensionPixelSize(R.styleable.FanLayout_bearing_offset, 0);
         mItemOffset = a.getDimensionPixelSize(R.styleable.FanLayout_item_offset, 0);
@@ -199,7 +230,7 @@ public class FanLayout extends ViewGroup {
         } else if (mScroller.isFinished()) {
             mLastScrollOffset = 0;
             if (isScrolled && isAutoSelect) {
-                startFixingAnimation();
+                playFixingAnimation();
                 isScrolled = false;
             }
         }
@@ -233,24 +264,32 @@ public class FanLayout extends ViewGroup {
         return targetAngle;
     }
 
-    private void startFixingAnimation() {
+    private void playFixingAnimation() {
         int childCount = getChildCount();
-        if (isBeingDragged || !isAutoSelect || childCount == 0 || (childCount == 1 && isViewType())) {
+        if (isBeingDragged || childCount == 0 || (childCount == 1 && isViewType())) {
             return;
         }
         int targetAngle = getTargetAngle();
-        final int hitPos = findClosestViewPos(targetAngle);
-        float rotation = getChildAt(hitPos).getRotation();
+        mCurrentSelectionIndex = findClosestViewPos(targetAngle);
+        float rotation = getChildAt(mCurrentSelectionIndex).getRotation();
         if (Math.abs(rotation - targetAngle) > 180) {
             targetAngle = 360 - targetAngle;
         }
         float angle = Math.abs(rotation - fixRotation(targetAngle));
-        mAnimator = ValueAnimator.ofFloat(0, rotation > fixRotation(targetAngle) ? -angle : angle).setDuration(mFixingAnimationDuration);
+        startValueAnimator(rotation > fixRotation(targetAngle) ? -angle : angle);
+    }
+
+    private void startValueAnimator(float end) {
+        mAnimator = ValueAnimator.ofFloat(0, end).setDuration(mFixingAnimationDuration);
         mAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 float currentValue = (float) animation.getAnimatedValue();
                 if (mLastScrollOffset != 0) {
+                    if (isOnLayout) {
+                        mAnimator.cancel();
+                        return;
+                    }
                     rotation(currentValue - mLastScrollOffset);
                 }
                 mLastScrollOffset = currentValue;
@@ -266,7 +305,7 @@ public class FanLayout extends ViewGroup {
             public void onAnimationEnd(Animator animation) {
                 mLastScrollOffset = 0;
                 if (mOnItemSelectedListener != null) {
-                    mOnItemSelectedListener.onSelected(getChildAt(hitPos));
+                    mOnItemSelectedListener.onSelected(getChildAt(mCurrentSelectionIndex));
                 }
             }
         });
@@ -328,19 +367,6 @@ public class FanLayout extends ViewGroup {
         return isClockwise;
     }
 
-    private void rotation(float rotation) {
-        for (int i = 0; i < getChildCount(); i++) {
-            View view = getChildAt(i);
-            if (view == mBearingView && isViewType() && !isBearingCanRoll) {
-                continue;
-            }
-            view.setRotation(fixRotation(view.getRotation() + rotation));
-        }
-        if (mOnItemRotateListener != null) {
-            mOnItemRotateListener.onRotate(rotation);
-        }
-    }
-
     private float fixRotation(float rotation) {
         //周角
         float angle = 360F;
@@ -359,6 +385,9 @@ public class FanLayout extends ViewGroup {
     public boolean onInterceptTouchEvent(MotionEvent event) {
         if ((event.getAction() == MotionEvent.ACTION_MOVE && isBeingDragged) || super.onInterceptTouchEvent(event)) {
             return true;
+        }
+        if (!isEnabled()) {
+            return false;
         }
         float x = event.getX(), y = event.getY();
         switch (event.getAction()) {
@@ -450,7 +479,8 @@ public class FanLayout extends ViewGroup {
             }
             size = 2 * mRadius + mItemOffset + childMaxWidth;
         }
-        setMeasuredDimension(size, size);
+        int height = MeasureSpec.getSize(heightMeasureSpec);
+        setMeasuredDimension(size, MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? height : size);
         if (isViewType()) {
             mRadius = Math.max(mBearingView.getMeasuredWidth(), mBearingView.getMeasuredHeight()) / 2;
         }
@@ -459,8 +489,10 @@ public class FanLayout extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        isOnLayout = true;
         abortAnimation();
         isScrolled = false;
+        boolean isHasBottomBearing = isViewType() && isBearingOnBottom;
         int startIndex = 0;
         if (isViewType()) {
             int width = mBearingView.getMeasuredWidth() / 2;
@@ -470,26 +502,67 @@ public class FanLayout extends ViewGroup {
             startIndex = 1;
         }
         int childCount = getChildCount();
-        float angle = 360F / (childCount - startIndex);
+        float angle = mItemLayoutMode == MODE_AVERAGE ? 360F / (childCount - startIndex) : mItemAngleOffset;
         for (int i = 0; i < childCount; i++) {
             View view = getChildAt(i);
-            if (view != mBearingView) {
-                int height = view.getMeasuredHeight() / 2;
-                int width = view.getMeasuredWidth();
-                if (mCurrentGravity == RIGHT || mCurrentGravity == RIGHT_TOP || mCurrentGravity == RIGHT_BOTTOM) {
-                    int baseLeft = mPivotX - mRadius - mItemOffset;
-                    view.layout(baseLeft - width, mPivotY - height, baseLeft, mPivotY + height);
-                    //更新旋转的中心点
-                    view.setPivotX(width + mRadius + mItemOffset);
-                    view.setPivotY(height);
-                    view.setRotation(i * angle);
+            if (view == mBearingView) {
+                continue;
+            }
+            int height = view.getMeasuredHeight() / 2;
+            int width = view.getMeasuredWidth();
+            if (mCurrentGravity == RIGHT || mCurrentGravity == RIGHT_TOP || mCurrentGravity == RIGHT_BOTTOM) {
+                int baseLeft = mPivotX - mRadius - mItemOffset;
+                view.layout(baseLeft - width, mPivotY - height, baseLeft, mPivotY + height);
+                //更新旋转的中心点
+                view.setPivotX(width + mRadius + mItemOffset);
+            } else {
+                int baseLeft = mPivotX + mRadius + mItemOffset;
+                view.layout(baseLeft, mPivotY - height, baseLeft + width, mPivotY + height);
+                //更新旋转的中心点
+                view.setPivotX(-mRadius - mItemOffset);
+            }
+            view.setPivotY(height);
+            int index = isHasBottomBearing ? i - 1 : i;
+            float rotation;
+            if (mItemAddDirection == ADD_DIRECTION_COUNTERCLOCKWISE) {
+                rotation = 360F - index * angle;
+            } else if (mItemAddDirection == ADD_DIRECTION_INTERLACED) {
+                int hitCount = 0;
+                boolean isDual = index % 2 == 0;
+                for (int j = 0; j < index; j++) {
+                    if (isDual) {
+                        if (j % 2 == 0) {
+                            hitCount++;
+                        }
+                    } else {
+                        if (j % 2 != 0) {
+                            hitCount++;
+                        }
+                    }
+                }
+                rotation = isDual ? 360F - hitCount * angle : hitCount * angle;
+            } else {
+                rotation = index * angle;
+            }
+            view.setRotation(fixRotation(rotation));
+        }
+        isOnLayout = false;
+        if (isAutoSelect && childCount > (isViewType() ? 1 : 0)) {
+            View view = getChildAt(mCurrentSelectionIndex);
+            if (view == null) {
+                view = getChildAt(0);
+            }
+            if (view != null) {
+                angle = view.getRotation();
+                float rotation = getTargetAngle() - angle;
+                if (!isSmoothSelection) {
+                    isSmoothSelection = false;
+                    startValueAnimator(rotation);
                 } else {
-                    int baseLeft = mPivotX + mRadius + mItemOffset;
-                    view.layout(baseLeft, mPivotY - height, baseLeft + width, mPivotY + height);
-                    //更新旋转的中心点
-                    view.setPivotX(-mRadius - mItemOffset);
-                    view.setPivotY(height);
-                    view.setRotation(i * angle);
+                    rotation(rotation);
+                    if (mOnItemSelectedListener != null) {
+                        mOnItemSelectedListener.onSelected(getChildAt(mCurrentSelectionIndex));
+                    }
                 }
             }
         }
@@ -504,20 +577,9 @@ public class FanLayout extends ViewGroup {
 
     @Override
     public void onDrawForeground(Canvas canvas) {
-//        mPaint.setColor(Color.BLUE);
-//        mPaint.setStyle(Paint.Style.FILL);
         if (!isViewType() && !isBearingOnBottom) {
             canvas.drawCircle(mPivotX, mPivotY, mRadius, mPaint);
         }
-//        canvas.drawLine(mPivotX, mPivotY, getWidth(), mPivotY, mPaint);
-//        canvas.drawPoint(mPivotX, mPivotY, mPaint);
-
-//        mPaint.setColor(Color.DKGRAY);
-//        mPaint.setStyle(Paint.Style.STROKE);
-//        mPaint.setStrokeWidth(10);
-//        canvas.drawLine(mStartX, mStartY, mEndX, mEndY, mPaint);
-//        canvas.drawLine(mPivotX, mPivotY, mEndX, mEndY, mPaint);
-//        canvas.drawLine(mStartX, mStartY, mPivotX, mPivotY, mPaint);
     }
 
     @Override
@@ -529,7 +591,47 @@ public class FanLayout extends ViewGroup {
     }
 
     @Override
+    public void removeViewsInLayout(int start, int count) {
+        mCurrentSelectionIndex = isViewType() && isBearingOnBottom ? 1 : 0;
+        super.removeViewsInLayout(start, count);
+    }
+
+    @Override
+    public void removeViews(int start, int count) {
+        mCurrentSelectionIndex = isViewType() && isBearingOnBottom ? 1 : 0;
+        super.removeViews(start, count);
+    }
+
+    @Override
+    public void removeView(View view) {
+        handleRemoveView(view);
+        super.removeView(view);
+    }
+
+    @Override
+    public void removeViewInLayout(View view) {
+        handleRemoveView(view);
+        super.removeViewInLayout(view);
+    }
+
+    private void handleRemoveView(View view) {
+        int index = indexOfChild(view);
+        if (index > -1) {
+            if (index <= mCurrentSelectionIndex) {
+                mCurrentSelectionIndex--;
+            }
+        }
+    }
+
+
+    @Override
     public void removeViewAt(int index) {
+        if (index < 0) {
+            return;
+        }
+        if (index <= mCurrentSelectionIndex) {
+            mCurrentSelectionIndex--;
+        }
         if (isViewType() && getChildAt(index) == mBearingView) {
             if (isBearingOnBottom) {
                 return;
@@ -553,6 +655,19 @@ public class FanLayout extends ViewGroup {
         mLastScrollOffset = 0;
     }
 
+    private void setItemChildViewRotation(boolean isUseRotation) {
+        for (int i = 0; i < getChildCount(); i++) {
+            View v = getChildAt(i);
+            if (!isBearingView(v) && v instanceof ViewGroup) {
+                ViewGroup viewGroup = (ViewGroup) v;
+                for (int j = 0; j < viewGroup.getChildCount(); j++) {
+                    View child = viewGroup.getChildAt(j);
+                    child.setRotation(isUseRotation ? 0 : -viewGroup.getRotation());
+                }
+            }
+        }
+    }
+
     public void setScrollAvailabilityRatio(@FloatRange(from = 0.0, to = 1.0) float ratio) {
         mScrollAvailabilityRatio = ratio;
     }
@@ -560,8 +675,20 @@ public class FanLayout extends ViewGroup {
     public void setAutoSelect(boolean isAutoSelect) {
         if (this.isAutoSelect != isAutoSelect) {
             this.isAutoSelect = isAutoSelect;
+            mCurrentSelectionIndex = isBearingOnBottom ? 1 : 0;
             requestLayout();
         }
+    }
+
+    public void setItemDirectionFixed(boolean isFixed) {
+        if (isItemDirectionFixed != isFixed) {
+            isItemDirectionFixed = isFixed;
+            setItemChildViewRotation(!isFixed);
+        }
+    }
+
+    public boolean isItemDirectionFixed() {
+        return isItemDirectionFixed;
     }
 
     public void setBearingCanRoll(boolean isBearingCanRoll) {
@@ -571,8 +698,31 @@ public class FanLayout extends ViewGroup {
         }
     }
 
-    public void setSelection(int index) {
+    public void setSelection(int index, boolean isSmooth) {
+        if (isAutoSelect && mCurrentSelectionIndex != index && getChildCount() > (isViewType() ? 1 : 0)) {
+            if (isViewType()) {
+                if (isBearingOnBottom) {
+                    index++;
+                } else {
+                    if (index == getChildCount() - 1) {
+                        index--;
+                    }
+                }
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= getChildCount()) {
+                    index = getChildCount() - 1;
+                }
+            }
+            mCurrentSelectionIndex = index;
+            isSmoothSelection = isSmooth;
+            requestLayout();
+        }
+    }
 
+    public boolean isBearingView(View view) {
+        return view == mBearingView;
     }
 
     public void setBearingOnBottom(boolean isBearingOnBottom) {
@@ -636,6 +786,22 @@ public class FanLayout extends ViewGroup {
         }
     }
 
+    public void rotation(float rotation) {
+        for (int i = 0; i < getChildCount(); i++) {
+            View view = getChildAt(i);
+            if (view == mBearingView && isViewType() && !isBearingCanRoll) {
+                continue;
+            }
+            view.setRotation(fixRotation(view.getRotation() + rotation));
+        }
+        if (isItemDirectionFixed) {
+            setItemChildViewRotation(false);
+        }
+        if (mOnItemRotateListener != null) {
+            mOnItemRotateListener.onRotate(rotation);
+        }
+    }
+
     public void setBearingType(@BearingType int type) {
         if (mCurrentBearingType != type) {
             mCurrentBearingType = type;
@@ -663,8 +829,25 @@ public class FanLayout extends ViewGroup {
         }
     }
 
-    public boolean isBearingView(View view) {
-        return view == mBearingView;
+    public void setItemLayoutMode(@LayoutMode int layoutMode) {
+        if (mItemLayoutMode != layoutMode) {
+            mItemLayoutMode = layoutMode;
+            requestLayout();
+        }
+    }
+
+    public void setItemAddDirection(@DirectionMode int direction) {
+        if (mItemAddDirection != direction) {
+            mItemAddDirection = direction;
+            requestLayout();
+        }
+    }
+
+    public void setItemAngleOffset(float angle) {
+        if (mItemAngleOffset != angle) {
+            mItemAngleOffset = angle;
+            requestLayout();
+        }
     }
 
     public void setFixingAnimationDuration(int duration) {

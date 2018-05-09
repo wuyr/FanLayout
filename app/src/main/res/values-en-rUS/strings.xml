@@ -19,4 +19,14 @@
     <string name="bearing_offset">bearing offset</string>
     <string name="items_offset">items offset</string>
     <string name="item_direction_is_fixed">item direction fixed</string>
+    <string name="bearing_type">bearing type</string>
+    <string name="gravity">gravity</string>
+    <string name="average">average</string>
+    <string name="item_layout_mode">item layout mode</string>
+    <string name="fixed">fixed</string>
+    <string name="item_add_direction">item add direction</string>
+    <string name="clockwise">clockwise</string>
+    <string name="counterclockwise">counterclockwise</string>
+    <string name="interlaced">interlaced</string>
+    <string name="item_angle_offset">item angle offset</string>
 </resources>

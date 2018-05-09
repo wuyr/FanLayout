@@ -7,7 +7,7 @@
     <com.wuyr.fanlayout.FanLayout xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/fan_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         app:bearing_color="#9F55"
         app:bearing_layout="@layout/bearing_view"
         app:bearing_type="view" />
@@ -43,6 +43,101 @@
                     android:layout_weight="1"
                     android:onClick="handleOnClick"
                     android:text="@string/remove_item"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="@string/item_layout_mode" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/average"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="@string/average"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/fixed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="@string/fixed"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="4dp"
+                    android:text="@string/item_angle_offset"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="18sp" />
+
+                <SeekBar
+                    android:id="@+id/item_angle_offset"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="360"
+                    android:padding="8dp"
+                    android:progress="180" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="@string/item_add_direction" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/clockwise"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="@string/clockwise"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/counterclockwise"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="@string/counterclockwise"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/interlaced"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="handleOnClick"
+                    android:text="@string/interlaced"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -95,6 +190,12 @@
                     android:textSize="16sp" />
             </LinearLayout>
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="@string/bearing_type" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -120,6 +221,12 @@
                     android:text="@string/color_mode"
                     android:textSize="12sp" />
             </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="@string/gravity" />
 
             <LinearLayout
                 android:layout_width="match_parent"
