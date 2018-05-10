@@ -14,6 +14,7 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Switch;
+import android.widget.Toast;
 
 /**
  * Created by wuyr on 18-5-5 下午6:14.
@@ -57,6 +58,8 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 }
             }
         });
+
+        mToast = Toast.makeText(this,"",Toast.LENGTH_SHORT);
     }
 
     public void handleOnClick(View view) {
@@ -102,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 break;
             case R.id.add_item:
                 mFanLayout.addView(getView());
+                onRotate(0);
                 break;
             case R.id.remove_item:
                 mFanLayout.removeViewAt(mFanLayout.getChildCount() - 1);
@@ -146,24 +150,31 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         return viewGroup;
     }
 
+    private Toast mToast;
+
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         switch (seekBar.getId()) {
             case R.id.item_angle_offset:
                 mFanLayout.setItemAngleOffset((float) progress - (float) seekBar.getMax() * .5F);
+                mToast.setText(String.valueOf((float) progress - (float) seekBar.getMax() * .5F));
                 break;
             case R.id.radius:
                 mFanLayout.setRadius(progress);
+                mToast.setText(String.valueOf(progress));
                 break;
             case R.id.item_offset:
                 mFanLayout.setItemOffset(progress - seekBar.getMax() / 2);
+                mToast.setText(String.valueOf(progress - seekBar.getMax() / 2));
                 break;
             case R.id.bearing_offset:
                 mFanLayout.setBearingOffset(progress - seekBar.getMax() / 2);
+                mToast.setText(String.valueOf(progress - seekBar.getMax() / 2));
                 break;
             default:
                 break;
         }
+        mToast.show();
     }
 
     @Override
