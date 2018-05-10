@@ -50,8 +50,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                         View child = viewGroup.getChildAt(i);
                         if (child instanceof ImageView) {
                             BitmapDrawable drawable = (BitmapDrawable) ((ImageView) child).getDrawable();
-                            drawable.setTint(getResources().getColor(R.color.colorAccent));
-                            drawable.setTintMode(PorterDuff.Mode.MULTIPLY);
+                            drawable.setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.MULTIPLY);
                         }
                     }
                     isRestored = false;
@@ -59,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             }
         });
 
-        mToast = Toast.makeText(this,"",Toast.LENGTH_SHORT);
+        mToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
     }
 
     public void handleOnClick(View view) {
@@ -219,8 +218,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     View child = viewGroup.getChildAt(j);
                     if (!isRestored && child instanceof ImageView) {
                         BitmapDrawable drawable = (BitmapDrawable) ((ImageView) child).getDrawable();
-                        drawable.setTint(Color.TRANSPARENT);
-                        drawable.setTintMode(PorterDuff.Mode.DST);
+                        drawable.setColorFilter(Color.TRANSPARENT, PorterDuff.Mode.DST);
                     }
                 }
             }
