@@ -30,6 +30,7 @@ import java.lang.annotation.RetentionPolicy;
  * Created by wuyr on 18-5-5 下午6:15.
  * GitHub: https://github.com/wuyr/FanLayout
  */
+@SuppressWarnings("unused")
 public class FanLayout extends ViewGroup {
 
     @IntDef({LEFT, RIGHT, TOP, BOTTOM, LEFT_TOP, LEFT_BOTTOM, RIGHT_TOP, RIGHT_BOTTOM})
@@ -68,7 +69,6 @@ public class FanLayout extends ViewGroup {
     private int mItemAddDirection;
     private float mItemAngleOffset;
     private int mCurrentGravity;
-    private int mCurrentSelectionIndex;
     private int mPivotX, mPivotY;
     private float mStartX, mStartY;
     private boolean isItemDirectionFixed;
@@ -78,6 +78,8 @@ public class FanLayout extends ViewGroup {
     private int mCurrentBearingType;
     private int mBearingColor;
     private int mBearingLayoutId;
+    private boolean isNeedRestoreIndex;
+    private int mLastSelectedIndex;
     private View mBearingView;
     private Paint mPaint;
     private Scroller mScroller;//平滑滚动辅助
@@ -127,7 +129,6 @@ public class FanLayout extends ViewGroup {
             } else {
                 mBearingView = LayoutInflater.from(context).inflate(mBearingLayoutId, this, false);
                 addView(mBearingView);
-                mCurrentSelectionIndex = 1;
             }
         } else {
             mRadius = a.getDimensionPixelSize(R.styleable.FanLayout_bearing_radius, 0);
@@ -269,16 +270,19 @@ public class FanLayout extends ViewGroup {
             return;
         }
         int targetAngle = getTargetAngle();
-        mCurrentSelectionIndex = findClosestViewPos(targetAngle);
-        float rotation = getChildAt(mCurrentSelectionIndex).getRotation();
+        int index = findClosestViewPos(targetAngle);
+        float rotation = getChildAt(index).getRotation();
         if (Math.abs(rotation - targetAngle) > 180) {
             targetAngle = 360 - targetAngle;
         }
         float angle = Math.abs(rotation - fixRotation(targetAngle));
-        startValueAnimator(rotation > fixRotation(targetAngle) ? -angle : angle);
+        startValueAnimator(rotation > fixRotation(targetAngle) ? -angle : angle, index);
     }
 
-    private void startValueAnimator(float end) {
+    private void startValueAnimator(float end, final int index) {
+        if (mAnimator != null && mAnimator.isRunning()) {
+            mAnimator.cancel();
+        }
         mAnimator = ValueAnimator.ofFloat(0, end).setDuration(mFixingAnimationDuration);
         mAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
@@ -304,7 +308,7 @@ public class FanLayout extends ViewGroup {
             public void onAnimationEnd(Animator animation) {
                 mLastScrollOffset = 0;
                 if (mOnItemSelectedListener != null) {
-                    mOnItemSelectedListener.onSelected(getChildAt(mCurrentSelectionIndex));
+                    mOnItemSelectedListener.onSelected(getChildAt(index));
                 }
             }
         });
@@ -313,7 +317,7 @@ public class FanLayout extends ViewGroup {
 
     private int findClosestViewPos(float targetAngle) {
         int childCount = getChildCount();
-        int startIndex = isViewType() && isBearingOnBottom ? 1 : 0;
+        int startIndex = isHasBottomBearing() ? 1 : 0;
         float temp = getChildAt(startIndex).getRotation();
         if (targetAngle == 0 && temp > 180) {
             temp = 360 - temp;
@@ -491,7 +495,7 @@ public class FanLayout extends ViewGroup {
         isOnLayout = true;
         abortAnimation();
         isScrolled = false;
-        boolean isHasBottomBearing = isViewType() && isBearingOnBottom;
+        boolean isHasBottomBearing = isHasBottomBearing();
         int startIndex = 0;
         if (isViewType()) {
             int width = mBearingView.getMeasuredWidth() / 2;
@@ -551,21 +555,19 @@ public class FanLayout extends ViewGroup {
         isOnLayout = false;
         if (isAutoSelect) {
             if (childCount > (isViewType() ? 1 : 0)) {
-                View view = getChildAt(mCurrentSelectionIndex);
+                int index = isNeedRestoreIndex ? mLastSelectedIndex : getCurrentSelectedIndex();
+                isNeedRestoreIndex = false;
+                View view = getChildAt(index);
                 if (view == null) {
-                    LogUtil.print("==null1");
                     view = getChildAt(isHasBottomBearing ? 1 : 0);
                 }
                 if (view != null) {
                     angle = view.getRotation();
                     float rotation = getTargetAngle() - angle;
                     rotation(rotation);
-                    LogUtil.print(rotation);
                     if (mOnItemSelectedListener != null) {
-                        mOnItemSelectedListener.onSelected(getChildAt(mCurrentSelectionIndex));
+                        mOnItemSelectedListener.onSelected(getChildAt(index));
                     }
-                } else {
-                    LogUtil.print("==null2");
                 }
             }
         } else {
@@ -589,66 +591,97 @@ public class FanLayout extends ViewGroup {
 
     @Override
     public void addView(View child, int index, LayoutParams params) {
-        // TODO: 18-5-10 if isViewType && !isBearingOnBottom remove BearingView first, and add childView than add on top
+        boolean needAdd = false;
         if (isViewType() && !isBearingOnBottom && getChildCount() > 0 && child != mBearingView) {
-            index = 0;
+            if (mBearingView != null) {
+                notifyNeedRestoreIndex();
+                LogUtil.print(getCurrentSelectedIndex());
+                super.removeView(mBearingView);
+                needAdd = true;
+            }
         }
+        notifyNeedRestoreIndex();
+        if (getChildCount()>1)
+        LogUtil.print(getCurrentSelectedIndex());
         super.addView(child, index, params);
+        if (needAdd) {
+            notifyNeedRestoreIndex();
+            LogUtil.print(getCurrentSelectedIndex());
+            addView(mBearingView);
+        }
     }
 
     @Override
-    public void removeViewsInLayout(int start, int count) {
-        mCurrentSelectionIndex = isViewType() && isBearingOnBottom ? 1 : 0;
-        super.removeViewsInLayout(start, count);
+    public void removeViewAt(int index) {
+        if (isViewType()) {
+            if (isBearingOnBottom) {
+                if (index + 1 < getChildCount()) {
+                    index++;
+                }
+            } else {
+                if (index == getChildCount() - 1) {
+                    index--;
+                    if (index < 0) {
+                        return;
+                    }
+                }
+            }
+        }
+        notifyNeedRestoreIndex();
+        super.removeViewAt(index);
     }
 
-    @Override
-    public void removeViews(int start, int count) {
-        mCurrentSelectionIndex = isViewType() && isBearingOnBottom ? 1 : 0;
-        super.removeViews(start, count);
+    private void notifyNeedRestoreIndex() {
+        if (isAutoSelect) {
+            mLastSelectedIndex = getCurrentSelectedIndex();
+            isNeedRestoreIndex = true;
+        }
     }
 
     @Override
     public void removeView(View view) {
-        handleRemoveView(view);
+        if (isViewType() && view == mBearingView) {
+            return;
+        }
         super.removeView(view);
     }
 
     @Override
     public void removeViewInLayout(View view) {
-        handleRemoveView(view);
+        if (isViewType() && view == mBearingView) {
+            return;
+        }
         super.removeViewInLayout(view);
     }
 
-    private void handleRemoveView(View view) {
-        int index = indexOfChild(view);
-        if (index > -1) {
-            if (index <= mCurrentSelectionIndex) {
-                mCurrentSelectionIndex--;
-            }
+    @Override
+    public void removeViews(int start, int count) {
+        removeViewsInLayout(start, count);
+        requestLayout();
+        invalidate();
+    }
+
+    @Override
+    public void removeViewsInLayout(int start, int count) {
+        final int end = start + count;
+        if (start < 0 || count < 0 || end > getChildCount()) {
+            throw new IndexOutOfBoundsException();
+        }
+        for (int i = start; i < end; i++) {
+            removeViewInLayout(getChildAt(i));
         }
     }
 
+    @Override
+    public void removeAllViews() {
+        removeAllViewsInLayout();
+        requestLayout();
+        invalidate();
+    }
 
     @Override
-    public void removeViewAt(int index) {
-        if (index < 0) {
-            return;
-        }
-        if (index <= mCurrentSelectionIndex) {
-            mCurrentSelectionIndex--;
-        }
-        if (isViewType() && getChildAt(index) == mBearingView) {
-            if (isBearingOnBottom) {
-                return;
-            } else {
-                index--;
-                if (getChildCount() - 1 < 1) {
-                    return;
-                }
-            }
-        }
-        super.removeViewAt(index);
+    public void removeAllViewsInLayout() {
+        removeViewsInLayout(0, getChildCount());
     }
 
     private void abortAnimation() {
@@ -681,9 +714,14 @@ public class FanLayout extends ViewGroup {
     public void setAutoSelect(boolean isAutoSelect) {
         if (this.isAutoSelect != isAutoSelect) {
             this.isAutoSelect = isAutoSelect;
-            mCurrentSelectionIndex = isBearingOnBottom ? 1 : 0;
-            requestLayout();
+            if (isAutoSelect) {
+                playFixingAnimation();
+            }
         }
+    }
+
+    private boolean isHasBottomBearing() {
+        return isViewType() && isBearingOnBottom;
     }
 
     public void setItemDirectionFixed(boolean isFixed) {
@@ -698,30 +736,25 @@ public class FanLayout extends ViewGroup {
     }
 
     public void setBearingCanRoll(boolean isBearingCanRoll) {
-        if (this.isBearingCanRoll != isBearingCanRoll) {
-            this.isBearingCanRoll = isBearingCanRoll;
-            requestLayout();
-        }
+        this.isBearingCanRoll = isBearingCanRoll;
     }
 
     public void setSelection(int index, boolean isSmooth) {
-        if (isAutoSelect && mCurrentSelectionIndex != index && getChildCount() > (isViewType() ? 1 : 0)) {
+        if (isAutoSelect && getChildCount() > (isViewType() ? 1 : 0)) {
             if (isViewType()) {
                 if (isBearingOnBottom) {
-                    index++;
+                    if (index + 1 < getChildCount()) {
+                        index++;
+                    }
                 } else {
                     if (index == getChildCount() - 1) {
                         index--;
+                        if (index < 0) {
+                            return;
+                        }
                     }
                 }
-                if (index < 0) {
-                    index = 0;
-                }
-                if (index >= getChildCount()) {
-                    index = getChildCount() - 1;
-                }
             }
-            mCurrentSelectionIndex = index;
             View view = getChildAt(index);
             if (view == null) {
                 view = getChildAt(0);
@@ -734,11 +767,11 @@ public class FanLayout extends ViewGroup {
                 }
                 float angle = Math.abs(rotation - fixRotation(targetAngle));
                 if (isSmooth) {
-                    startValueAnimator(rotation > fixRotation(targetAngle) ? -angle : angle);
+                    startValueAnimator(rotation > fixRotation(targetAngle) ? -angle : angle, index);
                 } else {
-                    rotation(rotation);
+                    rotation(rotation > fixRotation(targetAngle) ? -angle : angle);
                     if (mOnItemSelectedListener != null) {
-                        mOnItemSelectedListener.onSelected(getChildAt(mCurrentSelectionIndex));
+                        mOnItemSelectedListener.onSelected(getChildAt(index));
                     }
                 }
             }
@@ -754,8 +787,19 @@ public class FanLayout extends ViewGroup {
             this.isBearingOnBottom = isBearingOnBottom;
             if (isViewType()) {
                 if (mBearingView != null) {
-                    removeView(mBearingView);
-                    addView(mBearingView, isBearingOnBottom ? 0 : -1);
+                    super.removeViewInLayout(mBearingView);
+                    notifyNeedRestoreIndex();
+                    if (isBearingOnBottom) {
+                        mLastSelectedIndex++;
+                    }
+                    LayoutParams params = mBearingView.getLayoutParams();
+                    if (params == null) {
+                        params = generateDefaultLayoutParams();
+                        if (params == null) {
+                            throw new IllegalArgumentException("generateDefaultLayoutParams() cannot return null");
+                        }
+                    }
+                    super.addView(mBearingView, isBearingOnBottom ? 0 : -1, params);
                 }
             } else {
                 invalidate();
@@ -767,10 +811,15 @@ public class FanLayout extends ViewGroup {
         return mCurrentBearingType == TYPE_VIEW;
     }
 
+    public int getCurrentSelectedIndex() {
+        return findClosestViewPos(getTargetAngle());
+    }
+
     public void setRadius(int radius) {
         if (mRadius != radius) {
             mRadius = radius;
             if (!isViewType()) {
+                notifyNeedRestoreIndex();
                 requestLayout();
             }
         }
@@ -783,6 +832,7 @@ public class FanLayout extends ViewGroup {
     public void setBearingOffset(int centerOffset) {
         if (mBearingOffset != centerOffset) {
             mBearingOffset = centerOffset;
+            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
@@ -790,6 +840,7 @@ public class FanLayout extends ViewGroup {
     public void setItemOffset(int itemOffset) {
         if (mItemOffset != itemOffset) {
             mItemOffset = itemOffset;
+            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
@@ -797,6 +848,7 @@ public class FanLayout extends ViewGroup {
     public void setGravity(@Gravity int gravity) {
         if (mCurrentGravity != gravity) {
             mCurrentGravity = gravity;
+            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
@@ -839,7 +891,7 @@ public class FanLayout extends ViewGroup {
                 setWillNotDraw(true);
             } else {
                 if (mBearingView != null) {
-                    removeView(mBearingView);
+                    super.removeView(mBearingView);
                     mBearingView = null;
                 }
                 if (mPaint == null) {
@@ -849,6 +901,7 @@ public class FanLayout extends ViewGroup {
                 }
                 setWillNotDraw(false);
             }
+            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
@@ -856,6 +909,7 @@ public class FanLayout extends ViewGroup {
     public void setItemLayoutMode(@LayoutMode int layoutMode) {
         if (mItemLayoutMode != layoutMode) {
             mItemLayoutMode = layoutMode;
+            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
@@ -863,6 +917,7 @@ public class FanLayout extends ViewGroup {
     public void setItemAddDirection(@DirectionMode int direction) {
         if (mItemAddDirection != direction) {
             mItemAddDirection = direction;
+            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
@@ -871,6 +926,7 @@ public class FanLayout extends ViewGroup {
         if (mItemAngleOffset != angle) {
             mItemAngleOffset = angle;
             if (mItemLayoutMode == MODE_FIXED) {
+                notifyNeedRestoreIndex();
                 requestLayout();
             }
         }
