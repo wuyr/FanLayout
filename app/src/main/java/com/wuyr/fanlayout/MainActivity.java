@@ -114,41 +114,32 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             case R.id.color_mode:
                 mFanLayout.setBearingType(FanLayout.TYPE_COLOR);
                 break;
-            case R.id.s0:
-                view.setSelected(!view.isSelected());
-                mFanLayout.setSelection(0, view.isSelected());
+            case R.id.s0:                
+                mFanLayout.setSelection(0, true);
                 break;
-            case R.id.s1:
-                view.setSelected(!view.isSelected());
-                mFanLayout.setSelection(1, view.isSelected());
+            case R.id.s1:                
+                mFanLayout.setSelection(1, true);
                 break;
-            case R.id.s2:
-                view.setSelected(!view.isSelected());
-                mFanLayout.setSelection(2, view.isSelected());
+            case R.id.s2:                
+                mFanLayout.setSelection(2, true);
                 break;
-            case R.id.s3:
-                view.setSelected(!view.isSelected());
-                mFanLayout.setSelection(3, view.isSelected());
+            case R.id.s3:                
+                mFanLayout.setSelection(3, true);
                 break;
-            case R.id.s4:
-                view.setSelected(!view.isSelected());
-                mFanLayout.setSelection(4, view.isSelected());
+            case R.id.s4:                
+                mFanLayout.setSelection(4, true);
                 break;
-            case R.id.s5:
-                view.setSelected(!view.isSelected());
-                mFanLayout.setSelection(5, view.isSelected());
+            case R.id.s5:                
+                mFanLayout.setSelection(5, true);
                 break;
-            case R.id.s6:
-                view.setSelected(!view.isSelected());
-                mFanLayout.setSelection(6, view.isSelected());
+            case R.id.s6:                
+                mFanLayout.setSelection(6, true);
                 break;
-            case R.id.s7:
-                view.setSelected(!view.isSelected());
-                mFanLayout.setSelection(7, view.isSelected());
+            case R.id.s7:                
+                mFanLayout.setSelection(7, true);
                 break;
-            case R.id.s8:
-                view.setSelected(!view.isSelected());
-                mFanLayout.setSelection(8, view.isSelected());
+            case R.id.s8:                
+                mFanLayout.setSelection(8, true);
                 break;
             default:
                 break;

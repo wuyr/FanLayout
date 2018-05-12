@@ -33,63 +33,36 @@ import java.lang.annotation.RetentionPolicy;
 @SuppressWarnings("unused")
 public class FanLayout extends ViewGroup {
 
-    @IntDef({LEFT, RIGHT, TOP, BOTTOM, LEFT_TOP, LEFT_BOTTOM, RIGHT_TOP, RIGHT_BOTTOM})
-    @Retention(RetentionPolicy.SOURCE)
-    private @interface Gravity {
-    }
-
-    public static final int LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3,
-            LEFT_TOP = 4, LEFT_BOTTOM = 5, RIGHT_TOP = 6, RIGHT_BOTTOM = 7;
-
-    @IntDef({TYPE_COLOR, TYPE_VIEW})
-    @Retention(RetentionPolicy.SOURCE)
-    private @interface BearingType {
-    }
-
-    public static final int TYPE_COLOR = 0, TYPE_VIEW = 1;
-
-    @IntDef({MODE_AVERAGE, MODE_FIXED})
-    @Retention(RetentionPolicy.SOURCE)
-    private @interface LayoutMode {
-    }
-
-    public static final int MODE_AVERAGE = 0, MODE_FIXED = 1;
-
-    @IntDef({ADD_DIRECTION_CLOCKWISE, ADD_DIRECTION_COUNTERCLOCKWISE, ADD_DIRECTION_INTERLACED})
-    @Retention(RetentionPolicy.SOURCE)
-    private @interface DirectionMode {
-    }
-
-    public static final int ADD_DIRECTION_CLOCKWISE = 0, ADD_DIRECTION_COUNTERCLOCKWISE = 1, ADD_DIRECTION_INTERLACED = 2;
-    private int mFixingAnimationDuration = 300;
-    private int mRadius;
-    private int mBearingOffset;
-    private int mItemOffset;
-    private int mItemLayoutMode;
-    private int mItemAddDirection;
-    private float mItemAngleOffset;
-    private int mCurrentGravity;
-    private int mPivotX, mPivotY;
-    private float mStartX, mStartY;
-    private boolean isItemDirectionFixed;
-    private boolean isAutoSelect;
-    private boolean isBearingCanRoll;
-    private boolean isBearingOnBottom;
-    private int mCurrentBearingType;
-    private int mBearingColor;
-    private int mBearingLayoutId;
-    private boolean isNeedRestoreIndex;
-    private int mLastSelectedIndex;
-    private View mBearingView;
+    private int mFixingAnimationDuration = 300;//惯性滚动之后，调整位置的动画时长
+    private int mRadius;//轴承半径
+    private int mBearingOffset;//轴承偏移量
+    private int mItemOffset;//item偏移量
+    private int mItemLayoutMode;//item布局模式
+    private int mItemAddDirection;//item添加模式
+    private float mItemAngleOffset;//item角度偏移量
+    private int mCurrentGravity;//当前对齐方式
+    private int mPivotX, mPivotY;//圆心点
+    private float mStartX, mStartY;//记录上一次的触摸坐标
+    private boolean isItemDirectionFixed;//item是否保持垂直
+    private boolean isAutoSelect;//是否滚动完之后，自动选中
+    private boolean isBearingCanRoll;//轴承是否可以滚动
+    private boolean isBearingOnBottom;//轴承是否在底部
+    private int mCurrentBearingType;//当前轴承类型
+    private int mBearingColor;//轴承颜色
+    private int mBearingLayoutId;//轴承布局id
+    private int mCurrentSelectedIndex;//当前选中的item index
+    private View mBearingView;//轴承view
     private Paint mPaint;
     private Scroller mScroller;//平滑滚动辅助
     private VelocityTracker mVelocityTracker;//手指滑动速率搜集
-    private boolean isClockwiseScrolling;
-    private boolean isShouldBeGetY;
+    private boolean isClockwiseScrolling;//是否顺时针转动中
+    private boolean isShouldBeGetY;//应该获取Y轴的速率
     private int mTouchSlop;//触发滑动的最小距离
     private boolean isBeingDragged;//已经开始了拖动
-    private volatile boolean isOnLayout;
+    private volatile boolean isOnLayout;//layout子view中
     private float mScrollAvailabilityRatio;//滑动的利用率
+    private float mLastScrollOffset;//记录上一次的惯性滚动值
+    private boolean isScrolled;//是否滚动过
     private ValueAnimator mAnimator;
     private OnItemSelectedListener mOnItemSelectedListener;
     private OnItemRotateListener mOnItemRotateListener;
@@ -129,6 +102,7 @@ public class FanLayout extends ViewGroup {
             } else {
                 mBearingView = LayoutInflater.from(context).inflate(mBearingLayoutId, this, false);
                 addView(mBearingView);
+                mCurrentSelectedIndex = 1;
             }
         } else {
             mRadius = a.getDimensionPixelSize(R.styleable.FanLayout_bearing_radius, 0);
@@ -214,9 +188,6 @@ public class FanLayout extends ViewGroup {
         }
     }
 
-    private float mLastScrollOffset;
-    private boolean isScrolled;
-
     @Override
     public void computeScroll() {
         if (mScroller.computeScrollOffset()) {
@@ -236,6 +207,9 @@ public class FanLayout extends ViewGroup {
         }
     }
 
+    /**
+     * 获取目标角度 (始终在屏幕内能看见的)
+     */
     private int getTargetAngle() {
         int targetAngle;
         switch (mCurrentGravity) {
@@ -264,6 +238,9 @@ public class FanLayout extends ViewGroup {
         return targetAngle;
     }
 
+    /**
+     * 播放惯性滚动后，调整位置的动画
+     */
     private void playFixingAnimation() {
         int childCount = getChildCount();
         if (isBeingDragged || childCount == 0 || (childCount == 1 && isViewType())) {
@@ -279,7 +256,14 @@ public class FanLayout extends ViewGroup {
         startValueAnimator(rotation > fixRotation(targetAngle) ? -angle : angle, index);
     }
 
+    /**
+     * 开始播放动画
+     *
+     * @param end   end值
+     * @param index 当前选中的index
+     */
     private void startValueAnimator(float end, final int index) {
+        mCurrentSelectedIndex = index;
         if (mAnimator != null && mAnimator.isRunning()) {
             mAnimator.cancel();
         }
@@ -307,14 +291,24 @@ public class FanLayout extends ViewGroup {
             @Override
             public void onAnimationEnd(Animator animation) {
                 mLastScrollOffset = 0;
-                if (mOnItemSelectedListener != null) {
-                    mOnItemSelectedListener.onSelected(getChildAt(index));
-                }
+                notifyListener();
             }
         });
         mAnimator.start();
     }
 
+    private void notifyListener() {
+        if (mOnItemSelectedListener != null) {
+            mOnItemSelectedListener.onSelected(getChildAt(mCurrentSelectedIndex));
+        }
+    }
+
+    /**
+     * 找出最近的Item
+     *
+     * @param targetAngle 目标角度
+     * @return 最近Item的index
+     */
     private int findClosestViewPos(float targetAngle) {
         int childCount = getChildCount();
         int startIndex = isHasBottomBearing() ? 1 : 0;
@@ -370,6 +364,9 @@ public class FanLayout extends ViewGroup {
         return isClockwise;
     }
 
+    /**
+     * 调整一下角度，使其保持在0~360之间
+     */
     private float fixRotation(float rotation) {
         //周角
         float angle = 360F;
@@ -418,6 +415,9 @@ public class FanLayout extends ViewGroup {
         return isBeingDragged;
     }
 
+    /**
+     * 更新旋转的中心点位置
+     */
     private void updateCircleCenterPoint() {
         int cx = 0, cy = 0;
         int totalWidth = getMeasuredWidth();
@@ -555,19 +555,12 @@ public class FanLayout extends ViewGroup {
         isOnLayout = false;
         if (isAutoSelect) {
             if (childCount > (isViewType() ? 1 : 0)) {
-                int index = isNeedRestoreIndex ? mLastSelectedIndex : getCurrentSelectedIndex();
-                isNeedRestoreIndex = false;
-                View view = getChildAt(index);
-                if (view == null) {
-                    view = getChildAt(isHasBottomBearing ? 1 : 0);
-                }
+                View view = getChildAt(mCurrentSelectedIndex);
                 if (view != null) {
                     angle = view.getRotation();
                     float rotation = getTargetAngle() - angle;
                     rotation(rotation);
-                    if (mOnItemSelectedListener != null) {
-                        mOnItemSelectedListener.onSelected(getChildAt(index));
-                    }
+                    notifyListener();
                 }
             }
         } else {
@@ -594,19 +587,12 @@ public class FanLayout extends ViewGroup {
         boolean needAdd = false;
         if (isViewType() && !isBearingOnBottom && getChildCount() > 0 && child != mBearingView) {
             if (mBearingView != null) {
-                notifyNeedRestoreIndex();
-                LogUtil.print(getCurrentSelectedIndex());
                 super.removeView(mBearingView);
                 needAdd = true;
             }
         }
-        notifyNeedRestoreIndex();
-        if (getChildCount()>1)
-        LogUtil.print(getCurrentSelectedIndex());
         super.addView(child, index, params);
         if (needAdd) {
-            notifyNeedRestoreIndex();
-            LogUtil.print(getCurrentSelectedIndex());
             addView(mBearingView);
         }
     }
@@ -627,21 +613,19 @@ public class FanLayout extends ViewGroup {
                 }
             }
         }
-        notifyNeedRestoreIndex();
-        super.removeViewAt(index);
-    }
-
-    private void notifyNeedRestoreIndex() {
-        if (isAutoSelect) {
-            mLastSelectedIndex = getCurrentSelectedIndex();
-            isNeedRestoreIndex = true;
+        if (index == mCurrentSelectedIndex) {
+            mCurrentSelectedIndex = isHasBottomBearing() ? 1 : 0;
         }
+        super.removeViewAt(index);
     }
 
     @Override
     public void removeView(View view) {
         if (isViewType() && view == mBearingView) {
             return;
+        }
+        if (indexOfChild(view) == mCurrentSelectedIndex) {
+            mCurrentSelectedIndex = isHasBottomBearing() ? 1 : 0;
         }
         super.removeView(view);
     }
@@ -650,6 +634,9 @@ public class FanLayout extends ViewGroup {
     public void removeViewInLayout(View view) {
         if (isViewType() && view == mBearingView) {
             return;
+        }
+        if (indexOfChild(view) == mCurrentSelectedIndex) {
+            mCurrentSelectedIndex = isHasBottomBearing() ? 1 : 0;
         }
         super.removeViewInLayout(view);
     }
@@ -684,6 +671,9 @@ public class FanLayout extends ViewGroup {
         removeViewsInLayout(0, getChildCount());
     }
 
+    /**
+     * 打断动画
+     */
     private void abortAnimation() {
         if (!mScroller.isFinished()) {
             mScroller.abortAnimation();
@@ -694,6 +684,9 @@ public class FanLayout extends ViewGroup {
         mLastScrollOffset = 0;
     }
 
+    /**
+     * 旋转Item的子view
+     */
     private void rotationItemChild(boolean isUseRotation) {
         for (int i = 0; i < getChildCount(); i++) {
             View v = getChildAt(i);
@@ -707,10 +700,21 @@ public class FanLayout extends ViewGroup {
         }
     }
 
+    /**
+     * VelocityTracker的惯性滚动利用率
+     * 数值越大，惯性滚动的动画时间越长
+     *
+     * @param ratio (范围: 0~1)
+     */
     public void setScrollAvailabilityRatio(@FloatRange(from = 0.0, to = 1.0) float ratio) {
         mScrollAvailabilityRatio = ratio;
     }
 
+    /**
+     * 设置当FanLayout滚动完之后，是否自动选中最近的Item
+     *
+     * @param isAutoSelect true:开启
+     */
     public void setAutoSelect(boolean isAutoSelect) {
         if (this.isAutoSelect != isAutoSelect) {
             this.isAutoSelect = isAutoSelect;
@@ -724,6 +728,11 @@ public class FanLayout extends ViewGroup {
         return isViewType() && isBearingOnBottom;
     }
 
+    /**
+     * 设置item是否保持垂直
+     *
+     * @param isFixed true:保持垂直
+     */
     public void setItemDirectionFixed(boolean isFixed) {
         if (isItemDirectionFixed != isFixed) {
             isItemDirectionFixed = isFixed;
@@ -731,16 +740,28 @@ public class FanLayout extends ViewGroup {
         }
     }
 
+    /**
+     * @return item是否保持垂直
+     */
     public boolean isItemDirectionFixed() {
         return isItemDirectionFixed;
     }
 
+    /**
+     * 设置轴承是否可以跟随Item旋转 当 {@link BearingType = {@value TYPE_VIEW} 时有效}
+     */
     public void setBearingCanRoll(boolean isBearingCanRoll) {
         this.isBearingCanRoll = isBearingCanRoll;
     }
 
+    /**
+     * 指定选中
+     *
+     * @param index    item索引
+     * @param isSmooth 是否播放平滑动画
+     */
     public void setSelection(int index, boolean isSmooth) {
-        if (isAutoSelect && getChildCount() > (isViewType() ? 1 : 0)) {
+        if (isAutoSelect && index < getChildCount() && getChildCount() > (isViewType() ? 1 : 0)) {
             if (isViewType()) {
                 if (isBearingOnBottom) {
                     if (index + 1 < getChildCount()) {
@@ -755,43 +776,65 @@ public class FanLayout extends ViewGroup {
                     }
                 }
             }
-            View view = getChildAt(index);
-            if (view == null) {
-                view = getChildAt(0);
+            scrollToPosition(index, isSmooth);
+        }
+    }
+
+    /**
+     * 转动到指定的index
+     *
+     * @param isSmooth 是否平滑滚动
+     */
+    private void scrollToPosition(int index, boolean isSmooth) {
+        mCurrentSelectedIndex = index;
+        View view = getChildAt(index);
+        if (view == null) {
+            view = getChildAt(0);
+        }
+        if (view != null) {
+            float targetAngle = getTargetAngle();
+            float rotation = view.getRotation();
+            if (Math.abs(rotation - targetAngle) > 180) {
+                targetAngle = 360 - targetAngle;
             }
-            if (view != null) {
-                float targetAngle = getTargetAngle();
-                float rotation = view.getRotation();
-                if (Math.abs(rotation - targetAngle) > 180) {
-                    targetAngle = 360 - targetAngle;
-                }
-                float angle = Math.abs(rotation - fixRotation(targetAngle));
-                if (isSmooth) {
-                    startValueAnimator(rotation > fixRotation(targetAngle) ? -angle : angle, index);
-                } else {
-                    rotation(rotation > fixRotation(targetAngle) ? -angle : angle);
-                    if (mOnItemSelectedListener != null) {
-                        mOnItemSelectedListener.onSelected(getChildAt(index));
-                    }
-                }
+            float angle = Math.abs(rotation - fixRotation(targetAngle));
+            if (isSmooth) {
+                startValueAnimator(rotation > fixRotation(targetAngle) ? -angle : angle, index);
+            } else {
+                rotation(rotation > fixRotation(targetAngle) ? -angle : angle);
+                notifyListener();
             }
         }
     }
 
+    /**
+     * 判断是否为轴承View
+     *
+     * @param view 目标view
+     * @return 是否轴承View
+     */
     public boolean isBearingView(View view) {
         return view == mBearingView;
     }
 
+    /**
+     * 设置轴承是否在底部
+     */
     public void setBearingOnBottom(boolean isBearingOnBottom) {
         if (this.isBearingOnBottom != isBearingOnBottom) {
             this.isBearingOnBottom = isBearingOnBottom;
             if (isViewType()) {
-                if (mBearingView != null) {
-                    super.removeViewInLayout(mBearingView);
-                    notifyNeedRestoreIndex();
-                    if (isBearingOnBottom) {
-                        mLastSelectedIndex++;
+                if (isBearingOnBottom) {
+                    if (mCurrentSelectedIndex + 1 < getChildCount()) {
+                        mCurrentSelectedIndex++;
                     }
+                } else {
+                    if (mCurrentSelectedIndex - 1 >= 0) {
+                        mCurrentSelectedIndex--;
+                    }
+                }
+                if (mBearingView != null) {
+                    super.removeView(mBearingView);
                     LayoutParams params = mBearingView.getLayoutParams();
                     if (params == null) {
                         params = generateDefaultLayoutParams();
@@ -811,48 +854,65 @@ public class FanLayout extends ViewGroup {
         return mCurrentBearingType == TYPE_VIEW;
     }
 
+    /**
+     * 获取当前选中的Item index
+     */
     public int getCurrentSelectedIndex() {
-        return findClosestViewPos(getTargetAngle());
+        return mCurrentSelectedIndex;
     }
 
+    /**
+     * 指定轴承半径 {@link BearingType = {@value TYPE_COLOR} 时有效}
+     */
     public void setRadius(int radius) {
         if (mRadius != radius) {
             mRadius = radius;
             if (!isViewType()) {
-                notifyNeedRestoreIndex();
                 requestLayout();
             }
         }
     }
 
+    /**
+     * 指定轴承的布局id 当{@link BearingType = {@value TYPE_VIEW}时需设置}
+     */
     public void setBearingLayoutId(@LayoutRes int layoutId) {
         mBearingLayoutId = layoutId;
     }
 
+    /**
+     * 设置轴承的偏移量
+     */
     public void setBearingOffset(int centerOffset) {
         if (mBearingOffset != centerOffset) {
             mBearingOffset = centerOffset;
-            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
 
+    /**
+     * 设置Item的偏移量
+     */
     public void setItemOffset(int itemOffset) {
         if (mItemOffset != itemOffset) {
             mItemOffset = itemOffset;
-            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
 
+    /**
+     * 设置对齐方式 {@link Gravity}
+     */
     public void setGravity(@Gravity int gravity) {
         if (mCurrentGravity != gravity) {
             mCurrentGravity = gravity;
-            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
 
+    /**
+     * 设置轴承颜色 {@link BearingType = {@value TYPE_VIEW} 时有效}
+     */
     public void setBearingColor(@ColorInt int color) {
         if (mPaint != null) {
             mPaint.setColor(mBearingColor = color);
@@ -862,6 +922,11 @@ public class FanLayout extends ViewGroup {
         }
     }
 
+    /**
+     * 旋转 (相对)
+     *
+     * @param rotation 角度
+     */
     public void rotation(float rotation) {
         for (int i = 0; i < getChildCount(); i++) {
             View view = getChildAt(i);
@@ -878,6 +943,9 @@ public class FanLayout extends ViewGroup {
         }
     }
 
+    /**
+     * 设置轴承类型 {@link BearingType}
+     */
     public void setBearingType(@BearingType int type) {
         if (mCurrentBearingType != type) {
             mCurrentBearingType = type;
@@ -885,11 +953,21 @@ public class FanLayout extends ViewGroup {
                 if (mBearingLayoutId == 0) {
                     throw new IllegalStateException("bearing layout not set!");
                 } else {
+                    if (isBearingOnBottom) {
+                        if (mCurrentSelectedIndex + 1 < getChildCount()) {
+                            mCurrentSelectedIndex++;
+                        }
+                    }
                     mBearingView = LayoutInflater.from(getContext()).inflate(mBearingLayoutId, this, false);
                     addView(mBearingView, isBearingOnBottom ? 0 : -1);
                 }
                 setWillNotDraw(true);
             } else {
+                if (isBearingOnBottom) {
+                    if (mCurrentSelectedIndex - 1 >= 0) {
+                        mCurrentSelectedIndex--;
+                    }
+                }
                 if (mBearingView != null) {
                     super.removeView(mBearingView);
                     mBearingView = null;
@@ -901,62 +979,181 @@ public class FanLayout extends ViewGroup {
                 }
                 setWillNotDraw(false);
             }
-            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
 
+    /**
+     * item的布局方式: 默认: {@value MODE_AVERAGE}(平均)
+     * 如设置为fixed需指定 {@link #setItemAngleOffset}
+     */
     public void setItemLayoutMode(@LayoutMode int layoutMode) {
         if (mItemLayoutMode != layoutMode) {
             mItemLayoutMode = layoutMode;
-            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
 
+    /**
+     * 设置Item的添加方向 默认: 顺时针添加 {@link DirectionMode}
+     */
     public void setItemAddDirection(@DirectionMode int direction) {
         if (mItemAddDirection != direction) {
             mItemAddDirection = direction;
-            notifyNeedRestoreIndex();
             requestLayout();
         }
     }
 
+    /**
+     * 指定Item的偏移角度 {@link LayoutMode = {@value MODE_FIXED}时有效}
+     */
     public void setItemAngleOffset(float angle) {
         if (mItemAngleOffset != angle) {
             mItemAngleOffset = angle;
             if (mItemLayoutMode == MODE_FIXED) {
-                notifyNeedRestoreIndex();
                 requestLayout();
             }
         }
     }
 
+    /**
+     * 设置惯性滚动后，自动选中的动画时长
+     */
     public void setFixingAnimationDuration(int duration) {
         mFixingAnimationDuration = duration;
     }
 
+    /**
+     * @return 当前轴承类型 {@link BearingType}
+     */
     public int getBearingType() {
         return mCurrentBearingType;
     }
 
+    /**
+     * @return 当前对齐方式
+     */
     public int getGravity() {
         return mCurrentGravity;
-    }
-
-    public void setOnItemSelectedListener(OnItemSelectedListener listener) {
-        mOnItemSelectedListener = listener;
-    }
-
-    public interface OnItemSelectedListener {
-        void onSelected(View item);
     }
 
     public void setOnItemRotateListener(OnItemRotateListener listener) {
         mOnItemRotateListener = listener;
     }
 
+    public void setOnItemSelectedListener(OnItemSelectedListener listener) {
+        mOnItemSelectedListener = listener;
+    }
+
+    /**
+     * Item被选中的回调
+     */
+    public interface OnItemSelectedListener {
+        void onSelected(View item);
+    }
+
+    /**
+     * FanLayout旋转后的回调
+     */
     public interface OnItemRotateListener {
+        /**
+         * @param rotation 本次旋转的角度
+         */
         void onRotate(float rotation);
     }
+
+    @IntDef({LEFT, RIGHT, TOP, BOTTOM, LEFT_TOP, LEFT_BOTTOM, RIGHT_TOP, RIGHT_BOTTOM})
+    @Retention(RetentionPolicy.SOURCE)
+    private @interface Gravity {
+    }
+
+    /**
+     * 左
+     */
+    public static final int LEFT = 0;
+
+    /**
+     * 右
+     */
+    public static final int RIGHT = 1;
+
+    /**
+     * 上
+     */
+    public static final int TOP = 2;
+
+    /**
+     * 下
+     */
+    public static final int BOTTOM = 3;
+
+    /**
+     * 左上
+     */
+    public static final int LEFT_TOP = 4;
+
+    /**
+     * 左下
+     */
+    public static final int LEFT_BOTTOM = 5;
+
+    /**
+     * 右上
+     */
+    public static final int RIGHT_TOP = 6;
+
+    /**
+     * 右下
+     */
+    public static final int RIGHT_BOTTOM = 7;
+
+    @IntDef({TYPE_COLOR, TYPE_VIEW})
+    @Retention(RetentionPolicy.SOURCE)
+    private @interface BearingType {
+    }
+
+    /**
+     * 纯色
+     */
+    public static final int TYPE_COLOR = 0;
+
+    /**
+     * View类型
+     */
+    public static final int TYPE_VIEW = 1;
+
+    @IntDef({MODE_AVERAGE, MODE_FIXED})
+    @Retention(RetentionPolicy.SOURCE)
+    private @interface LayoutMode {
+    }
+
+    /**
+     * 平均分布
+     */
+    public static final int MODE_AVERAGE = 0;
+
+    /**
+     * 指定角度
+     */
+    public static final int MODE_FIXED = 1;
+
+    @IntDef({ADD_DIRECTION_CLOCKWISE, ADD_DIRECTION_COUNTERCLOCKWISE, ADD_DIRECTION_INTERLACED})
+    @Retention(RetentionPolicy.SOURCE)
+    private @interface DirectionMode {
+    }
+
+    /**
+     * 顺时针方向添加
+     */
+    public static final int ADD_DIRECTION_CLOCKWISE = 0;
+
+    /**
+     * 逆时针添加
+     */
+    public static final int ADD_DIRECTION_COUNTERCLOCKWISE = 1;
+
+    /**
+     * 交叉添加
+     */
+    public static final int ADD_DIRECTION_INTERLACED = 2;
 }
