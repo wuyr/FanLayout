@@ -1,5 +1,5 @@
 ## 可定制性超强的圆弧滑动组件
-### 效果图   (图片来源：百度贴吧)：
+### 效果图   (表情包来源：百度贴吧)：
 ![preview](https://github.com/wuyr/FanLayout/raw/master/previews/1.gif) ![preview](https://github.com/wuyr/FanLayout/raw/master/previews/2.gif) ![preview](https://github.com/wuyr/FanLayout/raw/master/previews/3.gif)
 ![preview](https://github.com/wuyr/FanLayout/raw/master/previews/4.gif) ![preview](https://github.com/wuyr/FanLayout/raw/master/previews/5.gif) ![preview](https://github.com/wuyr/FanLayout/raw/master/previews/6.gif)
 ![preview](https://github.com/wuyr/FanLayout/raw/master/previews/7.gif) ![preview](https://github.com/wuyr/FanLayout/raw/master/previews/8.gif) ![preview](https://github.com/wuyr/FanLayout/raw/master/previews/9.gif)
