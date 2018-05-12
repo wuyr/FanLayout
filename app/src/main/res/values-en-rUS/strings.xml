@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">FanLayoutTest</string>
+    <string name="add_item">add item</string>
+    <string name="remove_item">remove item</string>
+    <string name="auto_select">auto select</string>
+    <string name="bearing_can_roll">bearing can roll</string>
+    <string name="bearing_on_bottom">bearing on bottom</string>
+    <string name="view_mode">view mode</string>
+    <string name="color_mode">color mode</string>
+    <string name="left">left</string>
+    <string name="right">right</string>
+    <string name="top">top</string>
+    <string name="bottom">bottom</string>
+    <string name="l_t">l_t</string>
+    <string name="r_t">r_t</string>
+    <string name="l_b">l_b</string>
+    <string name="r_b">r_b</string>
+    <string name="bearing_radius">bearing radius</string>
+    <string name="bearing_offset">bearing offset</string>
+    <string name="items_offset">items offset</string>
+    <string name="item_direction_is_fixed">item direction fixed</string>
+    <string name="bearing_type">bearing type</string>
+    <string name="gravity">gravity</string>
+    <string name="average">average</string>
+    <string name="item_layout_mode">item layout mode</string>
+    <string name="fixed">fixed</string>
+    <string name="item_add_direction">item add direction</string>
+    <string name="clockwise">clockwise</string>
+    <string name="counterclockwise">counterclockwise</string>
+    <string name="interlaced">interlaced</string>
+    <string name="item_angle_offset">item angle offset</string>
+</resources>

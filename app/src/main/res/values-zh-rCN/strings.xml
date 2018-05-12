@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">FanLayoutTest</string>
+    <string name="add_item">添加一个item</string>
+    <string name="remove_item">移除一个item</string>
+    <string name="auto_select">自动选中</string>
+    <string name="bearing_can_roll">轴承跟随旋转</string>
+    <string name="bearing_on_bottom">轴承在底部</string>
+    <string name="view_mode">view</string>
+    <string name="color_mode">纯色</string>
+    <string name="left">左</string>
+    <string name="right">右</string>
+    <string name="top">上</string>
+    <string name="bottom">下</string>
+    <string name="l_t">左上</string>
+    <string name="r_t">右上</string>
+    <string name="l_b">左下</string>
+    <string name="r_b">右下</string>
+    <string name="bearing_radius">轴承半径</string>
+    <string name="bearing_offset">轴承偏移量</string>
+    <string name="items_offset">item偏移量</string>
+    <string name="item_direction_is_fixed">item保持垂直</string>
+    <string name="bearing_type">轴承类型</string>
+    <string name="gravity">对齐方式</string>
+    <string name="average">平均分布</string>
+    <string name="item_layout_mode">item布局方式</string>
+    <string name="fixed">指定角度</string>
+    <string name="item_add_direction">item的添加方向</string>
+    <string name="clockwise">顺时针</string>
+    <string name="counterclockwise">逆时针</string>
+    <string name="interlaced">交叉</string>
+    <string name="item_angle_offset">item角度</string>
+</resources>
