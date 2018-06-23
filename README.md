@@ -20,4 +20,5 @@ implementation 'com.wuyr:fanlayout:1.0.0'
 ```
 ## [app-debug.apk](https://github.com/wuyr/FanLayout/raw/master/app-debug.apk)
 ## 了解更多: https://github.com/Ifxcyr/FanLayout
+## 博客详情： https://blog.csdn.net/u011387817/article/details/80390555
 ## 几行代码实现Android弧形滑动 (圆弧滑动辅助) https://github.com/Ifxcyr/ArcSlidingHelper
