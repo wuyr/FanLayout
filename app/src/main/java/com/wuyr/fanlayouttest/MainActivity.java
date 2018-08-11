@@ -3,7 +3,6 @@ package com.wuyr.fanlayouttest;
 import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -16,7 +15,7 @@ import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.Toast;
 
-import com.wuyr.FanLayout;
+import com.wuyr.fanlayout.FanLayout;
 
 /**
  * Created by wuyr on 18-5-5 下午6:14.
@@ -49,12 +48,15 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     for (int i = 0; i < viewGroup.getChildCount(); i++) {
                         View child = viewGroup.getChildAt(i);
                         if (child instanceof ImageView) {
-                            BitmapDrawable drawable = (BitmapDrawable) ((ImageView) child).getDrawable();
-                            drawable.setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.MULTIPLY);
+                            ImageView imageView = (ImageView) child;
+                            imageView.getDrawable().setColorFilter(getResources()
+                                    .getColor(R.color.colorAccent), PorterDuff.Mode.MULTIPLY);
+                            imageView.invalidate();
                         }
                     }
                     isRestored = false;
                 }
+
             }
         });
 
@@ -115,31 +117,31 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             case R.id.color_mode:
                 mFanLayout.setBearingType(FanLayout.TYPE_COLOR);
                 break;
-            case R.id.s0:                
+            case R.id.s0:
                 mFanLayout.setSelection(0, true);
                 break;
-            case R.id.s1:                
+            case R.id.s1:
                 mFanLayout.setSelection(1, true);
                 break;
-            case R.id.s2:                
+            case R.id.s2:
                 mFanLayout.setSelection(2, true);
                 break;
-            case R.id.s3:                
+            case R.id.s3:
                 mFanLayout.setSelection(3, true);
                 break;
-            case R.id.s4:                
+            case R.id.s4:
                 mFanLayout.setSelection(4, true);
                 break;
-            case R.id.s5:                
+            case R.id.s5:
                 mFanLayout.setSelection(5, true);
                 break;
-            case R.id.s6:                
+            case R.id.s6:
                 mFanLayout.setSelection(6, true);
                 break;
-            case R.id.s7:                
+            case R.id.s7:
                 mFanLayout.setSelection(7, true);
                 break;
-            case R.id.s8:                
+            case R.id.s8:
                 mFanLayout.setSelection(8, true);
                 break;
             default:
@@ -237,20 +239,23 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     @Override
     public void onRotate(float rotation) {
-        for (int i = 0; i < mFanLayout.getChildCount(); i++) {
-            View v = mFanLayout.getChildAt(i);
-            if (!mFanLayout.isBearingView(v)) {
-                ViewGroup viewGroup = (ViewGroup) v;
-                for (int j = 0; j < viewGroup.getChildCount(); j++) {
-                    View child = viewGroup.getChildAt(j);
-                    if (!isRestored && child instanceof ImageView) {
-                        BitmapDrawable drawable = (BitmapDrawable) ((ImageView) child).getDrawable();
-                        drawable.setColorFilter(Color.TRANSPARENT, PorterDuff.Mode.DST);
+        if (!isRestored) {
+            for (int i = 0; i < mFanLayout.getChildCount(); i++) {
+                View v = mFanLayout.getChildAt(i);
+                if (!mFanLayout.isBearingView(v)) {
+                    ViewGroup viewGroup = (ViewGroup) v;
+                    for (int j = 0; j < viewGroup.getChildCount(); j++) {
+                        View child = viewGroup.getChildAt(j);
+                        if (child instanceof ImageView) {
+                            ((ImageView) child).getDrawable()
+                                    .setColorFilter(Color.TRANSPARENT, PorterDuff.Mode.DST);
+                            child.invalidate();
+                        }
                     }
                 }
             }
+            isRestored = true;
         }
-        isRestored = true;
     }
 }
 
