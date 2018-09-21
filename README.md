@@ -4,7 +4,7 @@
 ### 使用方式:
 #### 添加依赖：
 ```
-implementation 'com.wuyr:fanlayout:1.0.0'
+implementation 'com.wuyr:fanlayout:1.0.1'
 ```
 
 ### APIs:
@@ -27,8 +27,11 @@ implementation 'com.wuyr:fanlayout:1.0.0'
 |setRadius(int radius)|指定轴承半径<br>当**BearingType**为**TYPE_COLOR**时有效|
 |setScrollAvailabilityRatio(float ratio)|惯性滚动利用率<br>数值越大，惯性滚动的动画时间越长|
 |setSelection(int index, boolean isSmooth)|选中指定的Item|
-|setOnItemRotateListener(Listener listener)|设置旋转事件监听器|
-|setOnItemSelectedListener(Listener listener)|设置自动选中监听器|
+|setOnItemRotateListener(Listener listener)|设置旋转事件监听|
+|setOnItemSelectedListener(Listener listener)|设置自动选中监听|
+|setOnBearingClickListener(Listener listener)|设置轴承点击监听|
+|setOnItemClickListener(Listener listener)|设置items点击监听|
+|setOnItemLongClickListener(Listener listener)|设置items长按监听|
 
 ### Attributes:
 |Name|Format|Description|

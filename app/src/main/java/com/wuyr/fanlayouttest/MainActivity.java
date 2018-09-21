@@ -17,6 +17,9 @@ import android.widget.Toast;
 
 import com.wuyr.fanlayout.FanLayout;
 
+import java.util.Locale;
+
+
 /**
  * Created by wuyr on 18-5-5 下午6:14.
  */
@@ -28,6 +31,14 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.act_main_view);
+
+        findViews();
+        initListener();
+
+        mToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
+    }
+
+    private void findViews() {
         mFanLayout = findViewById(R.id.fan_layout);
         ((Switch) findViewById(R.id.auto_select)).setOnCheckedChangeListener(this);
         ((Switch) findViewById(R.id.bearing_can_roll)).setOnCheckedChangeListener(this);
@@ -37,7 +48,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         ((SeekBar) findViewById(R.id.radius)).setOnSeekBarChangeListener(this);
         ((SeekBar) findViewById(R.id.item_offset)).setOnSeekBarChangeListener(this);
         ((SeekBar) findViewById(R.id.bearing_offset)).setOnSeekBarChangeListener(this);
+    }
 
+    private void initListener() {
         mFanLayout.setOnItemRotateListener(this);
         mFanLayout.setOnItemSelectedListener(new FanLayout.OnItemSelectedListener() {
 
@@ -60,7 +73,32 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             }
         });
 
-        mToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
+        mFanLayout.setOnBearingClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showToast("BearingView clicked");
+            }
+        });
+
+        mFanLayout.setOnItemClickListener(new FanLayout.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int index) {
+                showToast(String.format(Locale.getDefault(), "item %d clicked", index));
+            }
+        });
+
+        mFanLayout.setOnItemLongClickListener(new FanLayout.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(View view, int index) {
+                showToast(String.format(Locale.getDefault(), "item %d long clicked", index));
+                return true;
+            }
+        });
+    }
+
+    private void showToast(String content) {
+        mToast.setText(content);
+        mToast.show();
     }
 
     public void handleOnClick(View view) {
@@ -185,24 +223,23 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         switch (seekBar.getId()) {
             case R.id.item_angle_offset:
                 mFanLayout.setItemAngleOffset((float) progress - (float) seekBar.getMax() * .5F);
-                mToast.setText(String.valueOf((float) progress - (float) seekBar.getMax() * .5F));
+                showToast(String.valueOf((float) progress - (float) seekBar.getMax() * .5F));
                 break;
             case R.id.radius:
                 mFanLayout.setRadius(progress);
-                mToast.setText(String.valueOf(progress));
+                showToast(String.valueOf(progress));
                 break;
             case R.id.item_offset:
                 mFanLayout.setItemOffset(progress - seekBar.getMax() / 2);
-                mToast.setText(String.valueOf(progress - seekBar.getMax() / 2));
+                showToast(String.valueOf(progress - seekBar.getMax() / 2));
                 break;
             case R.id.bearing_offset:
                 mFanLayout.setBearingOffset(progress - seekBar.getMax() / 2);
-                mToast.setText(String.valueOf(progress - seekBar.getMax() / 2));
+                showToast(String.valueOf(progress - seekBar.getMax() / 2));
                 break;
             default:
                 break;
         }
-        mToast.show();
     }
 
     @Override
